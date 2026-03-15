@@ -1,0 +1,21 @@
+{"level":"error","msg":"[]","mysql connect error":"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.","time":"2025-03-27 10:30:47"}
+{"level":"error","msg":"[]","mysql connect error":"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.","time":"2025-03-27 10:31:55"}
+{"level":"error","msg":"[]","mysql connect error":"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.","time":"2025-03-27 10:42:21"}
+{"level":"error","msg":"[]","mysql connect error":"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.","time":"2025-03-27 15:49:58"}
+Thu, 27 Mar 2025 15:51:06 CST - [::1] "GET /ai/digital/example.mp4 HTTP/1.1 404 0s "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0" "
+Thu, 27 Mar 2025 15:51:07 CST - [::1] "GET /favicon.ico HTTP/1.1 404 0s "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0" "
+Thu, 27 Mar 2025 15:51:19 CST - [::1] "GET /ai/digital HTTP/1.1 200 0s "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0" "
+Thu, 27 Mar 2025 15:52:41 CST - [::1] "GET /ai/degital HTTP/1.1 404 0s "" "
+Thu, 27 Mar 2025 15:53:34 CST - [::1] "GET /ai/digital HTTP/1.1 200 0s "" "
+{"level":"error","msg":"[]","mysql connect error":"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.","time":"2025-03-27 15:54:46"}
+Thu, 27 Mar 2025 15:54:59 CST - [::1] "GET /ai/video/list HTTP/1.1 200 518.4µs "" "
+{"level":"error","msg":"[]","mysql connect error":"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.","time":"2025-03-27 15:56:32"}
+Thu, 27 Mar 2025 15:59:11 CST - [::1] "GET /ai/digital/example.mp4 HTTP/1.1 404 710.5µs "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0" "
+{"level":"error","msg":"[]","mysql connect error":"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.","time":"2025-03-27 15:59:59"}
+Thu, 27 Mar 2025 16:00:02 CST - [::1] "GET /ai/digital/example.mp4 HTTP/1.1 404 0s "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0" "
+Thu, 27 Mar 2025 16:00:03 CST - [::1] "GET /ai/digital/example.mp4 HTTP/1.1 404 0s "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0" "
+Thu, 27 Mar 2025 16:00:04 CST - [::1] "GET /ai/digital/example.mp4 HTTP/1.1 404 0s "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0" "
+Thu, 27 Mar 2025 16:00:05 CST - [::1] "GET /ai/digital/example.mp4 HTTP/1.1 404 0s "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0" "
+Thu, 27 Mar 2025 16:00:05 CST - [::1] "GET /ai/digital/example.mp4 HTTP/1.1 404 0s "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0" "
+Thu, 27 Mar 2025 16:03:05 CST - [::1] "GET /ai/video/list HTTP/1.1 200 506.4µs "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0" "
+Thu, 27 Mar 2025 16:03:15 CST - [::1] "GET /ai/digital/example.mp4 HTTP/1.1 404 0s "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0" "

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>慧备灵师 - AI 教学平台</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: #f0f2f5; min-height: 100vh; }
+.landing { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: #fff; }
+.landing h1 { font-size: 3rem; margin-bottom: 0.5rem; background: linear-gradient(90deg, #FFD700, #FFA500); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.landing p { font-size: 1.1rem; color: #a0aec0; margin-bottom: 3rem; }
+.cards { display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center; max-width: 900px; }
+.card { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2.5rem 2rem; width: 380px; cursor: pointer; transition: all 0.3s; text-decoration: none; color: #fff; }
+.card:hover { transform: translateY(-4px); background: rgba(255,255,255,0.14); border-color: #FFD700; box-shadow: 0 8px 32px rgba(255,215,0,0.15); }
+.card-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+.card h2 { font-size: 1.4rem; margin-bottom: 0.8rem; }
+.card p { color: #a0aec0; font-size: 0.95rem; line-height: 1.6; }
+.card .tag { display: inline-block; background: rgba(255,215,0,0.2); color: #FFD700; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; margin-top: 1rem; }
+</style>
+</head>
+<body>
+<div class="landing">
+    <h1>慧备灵师</h1>
+    <p>AI 驱动的春秋战国历史教学平台</p>
+    <div class="cards">
+        <a class="card" href="dialog.html">
+            <div class="card-icon">💬</div>
+            <h2>教学对话助手</h2>
+            <p>基于 RAG 知识库与知识图谱的智能历史问答，支持本地/联网/智能三种模式，流式输出，多轮对话记忆。</p>
+            <span class="tag">RAG + 知识图谱 + Tool Call</span>
+        </a>
+        <a class="card" href="lessonprep.html">
+            <div class="card-icon">📋</div>
+            <h2>AI 备课工作流</h2>
+            <p>输入课程需求，自动生成大纲 → 对话修改 → 生成教案 → 生成 PPT，全流程 AI 辅助。</p>
+            <span class="tag">大纲 → 教案 → PPT</span>
+        </a>
+        <a class="card" href="digitalhuman.html">
+            <div class="card-icon">🎬</div>
+            <h2>数字人视频生成</h2>
+            <p>输入讲课文本，选择数字人形象，自动生成教师讲课视频，支持在线播放与下载。</p>
+            <span class="tag">文本 → 数字人讲课视频</span>
+        </a>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数字人视频生成 - 慧备灵师</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: #f0f2f5; min-height: 100vh; }
+
+/* 顶部导航 */
+.navbar { background: linear-gradient(90deg, #1a1a2e, #0f3460); color: #fff; padding: 0 2rem; height: 60px; display: flex; align-items: center; gap: 1.5rem; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+.navbar a { color: #a0aec0; text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+.navbar a:hover, .navbar a.active { color: #FFD700; }
+.navbar .brand { font-size: 1.2rem; font-weight: 700; background: linear-gradient(90deg, #FFD700, #FFA500); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-right: 1rem; }
+.navbar .sep { color: #444; }
+.navbar .nav-status { margin-left: auto; font-size: 0.8rem; color: #a0aec0; display: flex; align-items: center; gap: 0.5rem; }
+.navbar .nav-status .dot { width: 8px; height: 8px; border-radius: 50%; background: #27AE60; }
+.navbar .nav-status .dot.offline { background: #E74C3C; }
+
+/* 主体布局 */
+.main { display: grid; grid-template-columns: 400px 1fr; gap: 1.5rem; padding: 1.5rem; max-width: 1500px; margin: 0 auto; }
+
+/* 左侧：表单面板 */
+.left-col { display: flex; flex-direction: column; gap: 1rem; }
+.panel { background: #fff; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.panel h2 { font-size: 1.1rem; color: #1a1a2e; margin-bottom: 1.2rem; padding-bottom: 0.8rem; border-bottom: 2px solid #f0f0f0; display: flex; align-items: center; gap: 0.5rem; }
+.panel h2 .badge { font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 10px; background: #e8f2ff; color: #4A90E2; font-weight: 500; }
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-size: 0.85rem; color: #555; margin-bottom: 0.4rem; font-weight: 500; }
+.form-group .label-hint { font-weight: 400; color: #999; font-size: 0.78rem; }
+.form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: 0.65rem 0.85rem; border: 1px solid #ddd; border-radius: 8px;
+    font-size: 0.9rem; font-family: inherit; transition: border-color 0.2s, box-shadow 0.2s; background: #fafafa;
+}
+.form-group textarea { resize: vertical; min-height: 140px; line-height: 1.7; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none; border-color: #4A90E2; background: #fff; box-shadow: 0 0 0 3px rgba(74,144,226,0.12);
+}
+.form-group input.error, .form-group textarea.error { border-color: #E74C3C; background: #fff5f5; }
+.char-count { text-align: right; font-size: 0.78rem; color: #999; margin-top: 0.3rem; display: flex; justify-content: space-between; }
+.char-count .warn { color: #E67E22; }
+
+/* 形象选择卡片 */
+.avatar-section { margin-top: 0.3rem; }
+.avatar-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.4rem; }
+.avatar-card { border: 2px solid #eee; border-radius: 10px; padding: 0.7rem 0.5rem; cursor: pointer; transition: all 0.2s; text-align: center; background: #fafafa; position: relative; }
+.avatar-card:hover { border-color: #4A90E2; background: #f0f7ff; }
+.avatar-card.selected { border-color: #4A90E2; background: #e8f2ff; box-shadow: 0 2px 8px rgba(74,144,226,0.2); }
+.avatar-card .avatar-icon { font-size: 2rem; margin-bottom: 0.2rem; }
+.avatar-card .avatar-name { font-size: 0.78rem; color: #333; font-weight: 600; }
+.avatar-card .avatar-desc { font-size: 0.68rem; color: #888; margin-top: 0.15rem; }
+.avatar-card .check-mark { position: absolute; top: 4px; right: 4px; width: 18px; height: 18px; background: #4A90E2; border-radius: 50%; display: none; align-items: center; justify-content: center; color: #fff; font-size: 0.7rem; }
+.avatar-card.selected .check-mark { display: flex; }
+
+/* 音色选择 */
+.voice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.4rem; }
+.voice-card { border: 1px solid #eee; border-radius: 8px; padding: 0.6rem 0.8rem; cursor: pointer; transition: all 0.2s; background: #fafafa; display: flex; align-items: center; gap: 0.6rem; }
+.voice-card:hover { border-color: #4A90E2; background: #f0f7ff; }
+.voice-card.selected { border-color: #4A90E2; background: #e8f2ff; }
+.voice-card .voice-icon { font-size: 1.3rem; }
+.voice-card .voice-info { flex: 1; }
+.voice-card .voice-name { font-size: 0.82rem; color: #333; font-weight: 500; }
+.voice-card .voice-desc { font-size: 0.7rem; color: #888; }
+
+/* 提交按钮区 */
+.submit-section { margin-top: 0.5rem; }
+.btn-submit { width: 100%; padding: 0.85rem; background: linear-gradient(135deg, #4A90E2, #357ABD); color: #fff; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+.btn-submit:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(74,144,226,0.4); }
+.btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.btn-submit .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.estimate-time { text-align: center; font-size: 0.78rem; color: #888; margin-top: 0.6rem; }
+.estimate-time strong { color: #4A90E2; }
+
+/* 进度提示 */
+.progress-tip { background: #e8f2ff; border: 1px solid #b8daff; border-radius: 8px; padding: 0.8rem 1rem; font-size: 0.85rem; color: #004085; display: flex; align-items: center; gap: 0.6rem; margin-top: 0.8rem; }
+.progress-tip.success { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+.progress-tip.error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+.progress-tip .spinner { width: 16px; height: 16px; border: 2px solid #b8daff; border-top-color: #004085; border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
+
+/* 右侧：任务列表 + 播放器 */
+.right-col { display: flex; flex-direction: column; gap: 1.5rem; }
+
+/* 视频播放器区域 */
+.player-panel { background: #1a1a2e; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.15); }
+.player-header { padding: 1rem 1.5rem; background: rgba(255,255,255,0.05); color: #fff; font-size: 0.95rem; display: flex; align-items: center; justify-content: space-between; }
+.player-header .title-area { display: flex; align-items: center; gap: 0.6rem; }
+.player-header .status-indicator { font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 10px; background: rgba(255,255,255,0.1); }
+.video-container { position: relative; background: #000; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; }
+.video-container video { width: 100%; height: 100%; }
+.video-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; color: #666; padding: 2rem; text-align: center; }
+.video-placeholder .ph-icon { font-size: 4rem; opacity: 0.6; }
+.video-placeholder p { font-size: 0.95rem; }
+.video-placeholder .sub-hint { font-size: 0.8rem; color: #555; }
+.player-info { padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+.player-info .video-title { color: #fff; font-weight: 600; font-size: 0.95rem; }
+.player-info .video-meta { color: #a0aec0; font-size: 0.82rem; display: flex; gap: 1.5rem; }
+.btn-download { background: rgba(255,215,0,0.15); color: #FFD700; border: 1px solid rgba(255,215,0,0.3); border-radius: 6px; padding: 0.4rem 1rem; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; }
+.btn-download:hover { background: rgba(255,215,0,0.25); }
+
+/* 任务列表 */
+.task-list { background: #fff; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); flex: 1; display: flex; flex-direction: column; }
+.task-list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.8rem; border-bottom: 2px solid #f0f0f0; }
+.task-list-header h2 { font-size: 1.1rem; color: #1a1a2e; display: flex; align-items: center; gap: 0.5rem; }
+.task-list-header .header-actions { display: flex; gap: 0.5rem; }
+.btn-refresh { font-size: 0.8rem; color: #4A90E2; cursor: pointer; font-weight: 400; padding: 0.3rem 0.8rem; border: 1px solid #4A90E2; border-radius: 6px; transition: all 0.2s; background: transparent; }
+.btn-refresh:hover { background: #4A90E2; color: #fff; }
+.btn-refresh.loading { pointer-events: none; opacity: 0.7; }
+
+.filter-tabs { display: flex; gap: 0.4rem; margin-bottom: 1rem; }
+.filter-tab { padding: 0.35rem 0.8rem; border-radius: 16px; font-size: 0.78rem; cursor: pointer; transition: all 0.2s; background: #f0f0f0; color: #666; border: none; }
+.filter-tab:hover { background: #e0e0e0; }
+.filter-tab.active { background: #4A90E2; color: #fff; }
+.filter-tab .count { margin-left: 0.3rem; font-size: 0.7rem; opacity: 0.8; }
+
+.task-list-body { flex: 1; overflow-y: auto; max-height: 500px; }
+.task-item { display: flex; align-items: center; gap: 1rem; padding: 0.9rem; border-radius: 10px; cursor: pointer; transition: background 0.15s; border: 1px solid transparent; margin-bottom: 0.5rem; }
+.task-item:hover { background: #f8f9fa; }
+.task-item.active { background: #e8f2ff; border-color: #4A90E2; }
+.task-item.processing { background: #fff8e6; border-color: #F39C12; }
+.task-thumb { width: 100px; height: 56px; background: linear-gradient(135deg, #1a1a2e, #0f3460); border-radius: 8px; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; position: relative; }
+.task-thumb .duration { position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.7); color: #fff; font-size: 0.65rem; padding: 0.1rem 0.3rem; border-radius: 3px; }
+.task-info { flex: 1; min-width: 0; }
+.task-info .task-title { font-size: 0.92rem; font-weight: 600; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.task-info .task-preview { font-size: 0.78rem; color: #888; margin-top: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px; }
+.task-info .task-meta { font-size: 0.75rem; color: #999; margin-top: 0.35rem; display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: center; }
+.task-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+.btn-sm { padding: 0.3rem 0.7rem; border-radius: 5px; font-size: 0.78rem; cursor: pointer; border: 1px solid; transition: all 0.15s; font-weight: 500; }
+.btn-retry { color: #F39C12; border-color: #F39C12; background: transparent; }
+.btn-retry:hover { background: #F39C12; color: #fff; }
+.btn-delete { color: #E74C3C; border-color: #E74C3C; background: transparent; }
+.btn-delete:hover { background: #E74C3C; color: #fff; }
+.btn-play { color: #27AE60; border-color: #27AE60; background: transparent; }
+.btn-play:hover { background: #27AE60; color: #fff; }
+.btn-cancel { color: #888; border-color: #ccc; background: transparent; }
+.btn-cancel:hover { background: #f0f0f0; }
+
+/* 状态徽章 */
+.badge { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.72rem; font-weight: 500; }
+.badge-pending { background: #FFF3CD; color: #856404; }
+.badge-processing { background: #CCE5FF; color: #004085; }
+.badge-completed { background: #D4EDDA; color: #155724; }
+.badge-failed { background: #F8D7DA; color: #721C24; }
+.badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.badge-processing .badge-dot { animation: pulse 1.2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* 空状态 */
+.empty-state { text-align: center; padding: 3rem 1rem; color: #bbb; }
+.empty-state .empty-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.6; }
+.empty-state p { font-size: 0.95rem; }
+.empty-state .sub-hint { font-size: 0.82rem; color: #999; margin-top: 0.5rem; }
+
+/* 统计面板 */
+.stats-panel { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8rem; margin-bottom: 1rem; }
+.stat-card { background: #f8f9fa; border-radius: 8px; padding: 0.8rem; text-align: center; }
+.stat-card .stat-value { font-size: 1.5rem; font-weight: 700; color: #1a1a2e; }
+.stat-card .stat-label { font-size: 0.72rem; color: #888; margin-top: 0.2rem; }
+.stat-card.pending .stat-value { color: #856404; }
+.stat-card.processing .stat-value { color: #004085; }
+.stat-card.completed .stat-value { color: #155724; }
+.stat-card.failed .stat-value { color: #721C24; }
+
+/* Toast */
+.toast-container { position: fixed; top: 80px; right: 1.5rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; }
+.toast { padding: 0.9rem 1.3rem; border-radius: 10px; color: #fff; font-size: 0.88rem; min-width: 220px; animation: slideIn 0.3s; box-shadow: 0 4px 16px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 0.6rem; }
+.toast-success { background: #27AE60; }
+.toast-error { background: #E74C3C; }
+.toast-info { background: #2980B9; }
+.toast-warning { background: #F39C12; }
+@keyframes slideIn { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
+
+/* 模态框 */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.modal-overlay.show { display: flex; }
+.modal { background: #fff; border-radius: 16px; padding: 1.5rem; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; }
+.modal h3 { font-size: 1.1rem; margin-bottom: 1rem; color: #1a1a2e; }
+.modal p { font-size: 0.9rem; color: #666; margin-bottom: 1.2rem; line-height: 1.6; }
+.modal-actions { display: flex; gap: 0.8rem; justify-content: flex-end; }
+.btn-modal { padding: 0.6rem 1.2rem; border-radius: 8px; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; border: none; font-weight: 500; }
+.btn-modal-cancel { background: #f0f0f0; color: #666; }
+.btn-modal-cancel:hover { background: #e0e0e0; }
+.btn-modal-confirm { background: #E74C3C; color: #fff; }
+.btn-modal-confirm:hover { background: #c0392b; }
+
+/* 响应式 */
+@media (max-width: 1000px) {
+    .main { grid-template-columns: 1fr; }
+    .avatar-grid { grid-template-columns: repeat(2, 1fr); }
+    .stats-panel { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+    .navbar { padding: 0 1rem; gap: 1rem; }
+    .navbar .nav-status { display: none; }
+    .avatar-grid { grid-template-columns: 1fr 1fr; }
+    .voice-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- 导航栏 -->
+<nav class="navbar">
+    <span class="brand">慧备灵师</span>
+    <span class="sep">|</span>
+    <a href="/app/index.html">首页</a>
+    <a href="/app/dialog.html">对话助手</a>
+    <a href="/app/lessonprep.html">备课工作流</a>
+    <a href="/app/digitalhuman.html" class="active">数字人视频</a>
+    <div class="nav-status" id="navStatus">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">服务正常</span>
+    </div>
+</nav>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- 删除确认模态框 -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal">
+        <h3>确认删除</h3>
+        <p>确定要删除任务 "<span id="deleteTaskTitle"></span>" 吗？此操作不可恢复。</p>
+        <div class="modal-actions">
+            <button class="btn-modal btn-modal-cancel" onclick="closeDeleteModal()">取消</button>
+            <button class="btn-modal btn-modal-confirm" id="confirmDeleteBtn">删除</button>
+        </div>
+    </div>
+</div>
+
+<div class="main">
+    <!-- 左侧：生成表单 -->
+    <div class="left-col">
+        <div class="panel">
+            <h2>🎬 生成数字人视频 <span class="badge">Beta</span></h2>
+
+            <div class="form-group">
+                <label>视频标题 <span class="label-hint">（必填，用于识别和管理）</span></label>
+                <input type="text" id="titleInput" placeholder="例：春秋战国·百家争鸣" maxlength="50" />
+            </div>
+
+            <div class="form-group">
+                <label>讲课文本 <span class="label-hint">（数字人将朗读此内容，建议 100~500 字）</span></label>
+                <textarea id="textInput" placeholder="请输入数字人讲课文本，例如：&#10;&#10;同学们好，今天我们来学习春秋战国时期的百家争鸣。春秋战国是中国历史上思想最活跃的时期之一，涌现出了儒家、道家、墨家、法家等多个学派……" maxlength="2000" oninput="updateCharCount()"></textarea>
+                <div class="char-count">
+                    <span id="textHint">建议 100~500 字</span>
+                    <span><span id="charCount">0</span> / 2000</span>
+                </div>
+            </div>
+
+            <div class="form-group avatar-section">
+                <label>数字人形象</label>
+                <div class="avatar-grid" id="avatarGrid">
+                    <div class="avatar-card selected" data-id="default_teacher_male" onclick="selectAvatar(this)">
+                        <div class="check-mark">✓</div>
+                        <div class="avatar-icon">👨‍🏫</div>
+                        <div class="avatar-name">男教师</div>
+                        <div class="avatar-desc">历史/数学</div>
+                    </div>
+                    <div class="avatar-card" data-id="default_teacher_female" onclick="selectAvatar(this)">
+                        <div class="check-mark">✓</div>
+                        <div class="avatar-icon">👩‍🏫</div>
+                        <div class="avatar-name">女教师</div>
+                        <div class="avatar-desc">语文/英语</div>
+                    </div>
+                    <div class="avatar-card" data-id="default_teacher_young" onclick="selectAvatar(this)">
+                        <div class="check-mark">✓</div>
+                        <div class="avatar-icon">🧑‍🏫</div>
+                        <div class="avatar-name">青年教师</div>
+                        <div class="avatar-desc">通用</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>音色选择</label>
+                <div class="voice-grid" id="voiceGrid">
+                    <div class="voice-card selected" data-id="zh_male_1" onclick="selectVoice(this)">
+                        <div class="voice-icon">🎙️</div>
+                        <div class="voice-info">
+                            <div class="voice-name">标准男声</div>
+                            <div class="voice-desc">沉稳专业</div>
+                        </div>
+                    </div>
+                    <div class="voice-card" data-id="zh_female_1" onclick="selectVoice(this)">
+                        <div class="voice-icon">🎙️</div>
+                        <div class="voice-info">
+                            <div class="voice-name">标准女声</div>
+                            <div class="voice-desc">亲切自然</div>
+                        </div>
+                    </div>
+                    <div class="voice-card" data-id="zh_male_2" onclick="selectVoice(this)">
+                        <div class="voice-icon">🎙️</div>
+                        <div class="voice-info">
+                            <div class="voice-name">新闻播音</div>
+                            <div class="voice-desc">正式严肃</div>
+                        </div>
+                    </div>
+                    <div class="voice-card" data-id="zh_female_2" onclick="selectVoice(this)">
+                        <div class="voice-icon">🎙️</div>
+                        <div class="voice-info">
+                            <div class="voice-name">温柔女声</div>
+                            <div class="voice-desc">轻松活泼</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>语言</label>
+                <select id="langSelect">
+                    <option value="zh-CN">中文（普通话）</option>
+                    <option value="zh-TW">中文（粤语）</option>
+                    <option value="en-US">English (US)</option>
+                    <option value="en-GB">English (UK)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>API 提供商 <span class="label-hint">（可切换不同生成引擎）</span></label>
+                <select id="providerSelect" onchange="updateProviderInfo()">
+                    <option value="heygen">HeyGen（商业，推荐）</option>
+                    <option value="sadtalker">SadTalker（开源，本地部署）</option>
+                    <option value="custom">自定义模型（ML 团队）</option>
+                </select>
+            </div>
+
+            <div class="submit-section">
+                <button class="btn-submit" id="submitBtn" onclick="submitTask()">
+                    <span id="submitBtnText">开始生成视频</span>
+                </button>
+                <div class="estimate-time">预计生成时间：<strong id="estimateTime">2~5 分钟</strong></div>
+            </div>
+            
+            <div id="submitTip" style="display:none;"></div>
+        </div>
+
+        <!-- 使用说明 -->
+        <div class="panel" style="background: #f8f9fa;">
+            <h2>💡 使用说明</h2>
+            <div style="font-size: 0.82rem; color: #666; line-height: 1.7;">
+                <p><strong>1. 填写标题和讲课文本</strong><br>标题用于识别任务，文本是数字人要朗读的内容。</p>
+                <p style="margin-top: 0.6rem;"><strong>2. 选择数字人形象和音色</strong><br>根据学科特点选择合适的教师形象。</p>
+                <p style="margin-top: 0.6rem;"><strong>3. 点击生成并等待</strong><br>视频生成需要 2~10 分钟，可关闭页面后回来查看。</p>
+                <p style="margin-top: 0.6rem;"><strong>4. 播放或下载</strong><br>生成完成后可在线播放或下载到本地。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右侧：播放器 + 任务列表 -->
+    <div class="right-col">
+        <!-- 视频播放器 -->
+        <div class="player-panel">
+            <div class="player-header">
+                <div class="title-area">
+                    <span id="playerTitle">等待视频生成…</span>
+                    <span class="status-indicator" id="playerStatus" style="display:none;"></span>
+                </div>
+                <a id="downloadBtn" href="#" class="btn-download" style="display:none" target="_blank">
+                    <span>⬇</span> 下载视频
+                </a>
+            </div>
+            <div class="video-container">
+                <video id="videoPlayer" controls style="display:none">
+                    <source src="" type="video/mp4">
+                </video>
+                <div class="video-placeholder" id="videoPlaceholder">
+                    <div class="ph-icon">🎥</div>
+                    <p>生成完成后将在此处播放</p>
+                    <p class="sub-hint">支持在线播放和下载</p>
+                </div>
+            </div>
+            <div class="player-info" id="playerInfo" style="display:none">
+                <div class="video-title" id="playerVideoTitle"></div>
+                <div class="video-meta">
+                    <span id="playerProvider"></span>
+                    <span id="playerCreatedAt"></span>
+                    <span id="playerDuration"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 任务列表 -->
+        <div class="task-list">
+            <div class="task-list-header">
+                <h2>📋 生成记录</h2>
+                <div class="header-actions">
+                    <button class="btn-refresh" id="refreshBtn" onclick="loadTasks()">刷新</button>
+                </div>
+            </div>
+
+            <!-- 统计面板 -->
+            <div class="stats-panel" id="statsPanel">
+                <div class="stat-card pending">
+                    <div class="stat-value" id="statPending">0</div>
+                    <div class="stat-label">等待中</div>
+                </div>
+                <div class="stat-card processing">
+                    <div class="stat-value" id="statProcessing">0</div>
+                    <div class="stat-label">生成中</div>
+                </div>
+                <div class="stat-card completed">
+                    <div class="stat-value" id="statCompleted">0</div>
+                    <div class="stat-label">已完成</div>
+                </div>
+                <div class="stat-card failed">
+                    <div class="stat-value" id="statFailed">0</div>
+                    <div class="stat-label">失败</div>
+                </div>
+            </div>
+
+            <!-- 筛选标签 -->
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-status="all" onclick="filterTasks('all')">全部</button>
+                <button class="filter-tab" data-status="pending" onclick="filterTasks('pending')">等待中</button>
+                <button class="filter-tab" data-status="processing" onclick="filterTasks('processing')">生成中</button>
+                <button class="filter-tab" data-status="completed" onclick="filterTasks('completed')">已完成</button>
+                <button class="filter-tab" data-status="failed" onclick="filterTasks('failed')">失败</button>
+            </div>
+
+            <div class="task-list-body" id="taskListContainer">
+                <div class="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <p>暂无生成记录</p>
+                    <p class="sub-hint">填写左侧表单开始生成第一个视频</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const API = '/api/digital-human';
+let selectedAvatarID = 'default_teacher_male';
+let selectedVoiceID = 'zh_male_1';
+let currentFilter = 'all';
+let allTasks = [];
+let pollingTimers = {};
+let deleteTaskId = null;
+
+// ===== 初始化 =====
+window.addEventListener('DOMContentLoaded', () => {
+    loadAvatars();
+    loadTasks();
+    checkServiceStatus();
+    // 每 30 秒自动刷新列表
+    setInterval(loadTasks, 30000);
+    // 每 60 秒检查服务状态
+    setInterval(checkServiceStatus, 60000);
+});
+
+// ===== 服务状态检查 =====
+async function checkServiceStatus() {
+    try {
+        const resp = await fetch(`${API}/avatars`, { method: 'GET' });
+        const dot = document.getElementById('statusDot');
+        const text = document.getElementById('statusText');
+        if (resp.ok) {
+            dot.classList.remove('offline');
+            text.textContent = '服务正常';
+        } else {
+            dot.classList.add('offline');
+            text.textContent = '服务异常';
+        }
+    } catch (e) {
+        document.getElementById('statusDot').classList.add('offline');
+        document.getElementById('statusText').textContent = '服务离线';
+    }
+}
+
+// ===== 字数统计 =====
+function updateCharCount() {
+    const len = document.getElementById('textInput').value.length;
+    document.getElementById('charCount').textContent = len;
+    const hint = document.getElementById('textHint');
+    if (len < 10) {
+        hint.textContent = '文本太短';
+        hint.style.color = '#E74C3C';
+    } else if (len < 100) {
+        hint.textContent = '建议再写一些';
+        hint.style.color = '#F39C12';
+    } else if (len > 500) {
+        hint.textContent = '文本较长，生成时间会增加';
+        hint.style.color = '#F39C12';
+    } else {
+        hint.textContent = '长度适中';
+        hint.style.color = '#27AE60';
+    }
+}
+
+// ===== 形象选择 =====
+function selectAvatar(card) {
+    document.querySelectorAll('.avatar-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedAvatarID = card.dataset.id;
+}
+
+// ===== 音色选择 =====
+function selectVoice(card) {
+    document.querySelectorAll('.voice-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedVoiceID = card.dataset.id;
+}
+
+// ===== 提供商切换 =====
+function updateProviderInfo() {
+    const provider = document.getElementById('providerSelect').value;
+    const estimates = {
+        heygen: '2~5 分钟',
+        sadtalker: '5~15 分钟',
+        custom: '视模型性能而定'
+    };
+    document.getElementById('estimateTime').textContent = estimates[provider] || '2~10 分钟';
+}
+
+// ===== 提交生成任务 =====
+async function submitTask() {
+    const title = document.getElementById('titleInput').value.trim();
+    const text = document.getElementById('textInput').value.trim();
+    const language = document.getElementById('langSelect').value;
+    const provider = document.getElementById('providerSelect').value;
+
+    // 校验
+    let hasError = false;
+    if (!title) {
+        document.getElementById('titleInput').classList.add('error');
+        hasError = true;
+    } else {
+        document.getElementById('titleInput').classList.remove('error');
+    }
+    if (text.length < 10) {
+        document.getElementById('textInput').classList.add('error');
+        showToast('讲课文本至少 10 字', 'error');
+        hasError = true;
+    } else {
+        document.getElementById('textInput').classList.remove('error');
+    }
+    if (hasError) return;
+
+    const btn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('submitBtnText');
+    btn.disabled = true;
+    btnText.innerHTML = '<div class="spinner"></div> 提交中…';
+
+    showTip('正在提交任务，请稍候…', 'info');
+
+    try {
+        const resp = await fetch(`${API}/videos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                title, 
+                text, 
+                avatar_id: selectedAvatarID, 
+                voice_id: selectedVoiceID,
+                language, 
+                provider 
+            })
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || '提交失败');
+
+        showToast('任务已提交，正在生成中', 'success');
+        showTip(`任务已进入队列（ID: ${data.video.id.slice(0,8)}…），视频生成需要几分钟，您可以稍后回来查看`, 'info');
+
+        // 清空表单
+        document.getElementById('titleInput').value = '';
+        document.getElementById('textInput').value = '';
+        updateCharCount();
+
+        await loadTasks();
+
+        // 开始轮询该任务
+        startPolling(data.video.id);
+    } catch (e) {
+        showToast(e.message, 'error');
+        showTip(e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btnText.textContent = '开始生成视频';
+    }
+}
+
+// ===== 加载任务列表 =====
+async function loadTasks() {
+    const refreshBtn = document.getElementById('refreshBtn');
+    refreshBtn.classList.add('loading');
+    refreshBtn.textContent = '加载中…';
+
+    try {
+        const resp = await fetch(`${API}/videos?page=1&size=50`);
+        const data = await resp.json();
+        allTasks = data.items || [];
+        updateStats(allTasks);
+        renderTasks(allTasks);
+
+        // 对处理中的任务自动轮询
+        allTasks.forEach(v => {
+            if (v.status === 'pending' || v.status === 'processing') {
+                startPolling(v.id);
+            }
+        });
+    } catch (e) {
+        console.error('loadTasks error:', e);
+        showToast('加载任务列表失败', 'error');
+    } finally {
+        refreshBtn.classList.remove('loading');
+        refreshBtn.textContent = '刷新';
+    }
+}
+
+// ===== 更新统计 =====
+function updateStats(tasks) {
+    const stats = { pending: 0, processing: 0, completed: 0, failed: 0 };
+    tasks.forEach(t => {
+        if (stats.hasOwnProperty(t.status)) stats[t.status]++;
+    });
+    document.getElementById('statPending').textContent = stats.pending;
+    document.getElementById('statProcessing').textContent = stats.processing;
+    document.getElementById('statCompleted').textContent = stats.completed;
+    document.getElementById('statFailed').textContent = stats.failed;
+}
+
+// ===== 筛选任务 =====
+function filterTasks(status) {
+    currentFilter = status;
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.status === status);
+    });
+    renderTasks(allTasks);
+}
+
+// ===== 渲染任务列表 =====
+function renderTasks(items) {
+    const container = document.getElementById('taskListContainer');
+    
+    // 应用筛选
+    let filtered = items;
+    if (currentFilter !== 'all') {
+        filtered = items.filter(v => v.status === currentFilter);
+    }
+
+    if (!filtered || filtered.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">${currentFilter === 'all' ? '📭' : '🔍'}</div>
+                <p>${currentFilter === 'all' ? '暂无生成记录' : '没有符合条件的任务'}</p>
+                <p class="sub-hint">${currentFilter === 'all' ? '填写左侧表单开始生成第一个视频' : '试试其他筛选条件'}</p>
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = filtered.map(v => `
+        <div class="task-item ${v.status === 'processing' ? 'processing' : ''}" id="task-${v.id}" onclick="selectTask('${v.id}')">
+            <div class="task-thumb">
+                ${v.status === 'completed' ? '🎬' : v.status === 'processing' ? '⚙️' : v.status === 'failed' ? '❌' : '🕐'}
+                ${v.duration > 0 ? `<span class="duration">${formatDuration(v.duration)}</span>` : ''}
+            </div>
+            <div class="task-info">
+                <div class="task-title">${escHtml(v.title)}</div>
+                <div class="task-preview">${getTextPreview(v.text)}</div>
+                <div class="task-meta">
+                    ${statusBadge(v.status)}
+                    <span>${providerLabel(v.provider)}</span>
+                    <span>${formatTime(v.created_at)}</span>
+                    ${v.retry_count > 0 ? `<span style="color:#E67E22">重试 ${v.retry_count} 次</span>` : ''}
+                </div>
+            </div>
+            <div class="task-actions" onclick="event.stopPropagation()">
+                ${v.status === 'completed' ? `<button class="btn-sm btn-play" onclick="playVideo('${v.id}')">播放</button>` : ''}
+                ${v.status === 'processing' ? `<button class="btn-sm btn-cancel" onclick="cancelTask('${v.id}')">取消</button>` : ''}
+                ${v.status === 'failed' ? `<button class="btn-sm btn-retry" onclick="retryTask('${v.id}')">重试</button>` : ''}
+                <button class="btn-sm btn-delete" onclick="showDeleteModal('${v.id}', '${escHtml(v.title)}')">删除</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// ===== 轮询任务状态 =====
+function startPolling(videoID) {
+    if (pollingTimers[videoID]) return;
+    
+    pollingTimers[videoID] = setInterval(async () => {
+        try {
+            const resp = await fetch(`${API}/videos/${videoID}`);
+            const v = await resp.json();
+
+            if (v.status === 'completed' || v.status === 'failed' || v.status === 'cancelled') {
+                clearInterval(pollingTimers[videoID]);
+                delete pollingTimers[videoID];
+                await loadTasks();
+                
+                if (v.status === 'completed') {
+                    showToast(`"${v.title}" 生成完成！`, 'success');
+                    // 自动播放
+                    if (v.video_url) {
+                        playVideo(v.id);
+                    }
+                } else if (v.status === 'failed') {
+                    showToast(`"${v.title}" 生成失败：${v.error_msg || '未知错误'}`, 'error');
+                }
+            } else {
+                // 更新列表中的状态徽章
+                const el = document.getElementById(`task-${videoID}`);
+                if (el) {
+                    const badge = el.querySelector('.badge');
+                    if (badge) badge.outerHTML = statusBadge(v.status);
+                    // 更新 processing 样式
+                    el.classList.toggle('processing', v.status === 'processing');
+                }
+            }
+        } catch (e) {
+            console.error('polling error:', e);
+        }
+    }, 8000);
+}
+
+// ===== 选择任务 =====
+function selectTask(id) {
+    document.querySelectorAll('.task-item').forEach(el => el.classList.remove('active'));
+    const el = document.getElementById(`task-${id}`);
+    if (el) el.classList.add('active');
+
+    const task = allTasks.find(t => t.id === id);
+    if (task && task.video_url) {
+        playVideo(id);
+    }
+}
+
+// ===== 播放视频 =====
+function playVideo(id) {
+    const task = allTasks.find(t => t.id === id);
+    if (!task || !task.video_url) {
+        showToast('视频暂不可播放', 'error');
+        return;
+    }
+
+    const player = document.getElementById('videoPlayer');
+    const placeholder = document.getElementById('videoPlaceholder');
+    const playerTitle = document.getElementById('playerTitle');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const playerInfo = document.getElementById('playerInfo');
+    const playerStatus = document.getElementById('playerStatus');
+
+    player.src = task.video_url;
+    player.style.display = 'block';
+    placeholder.style.display = 'none';
+    playerTitle.textContent = task.title;
+    playerStatus.style.display = 'inline-block';
+    playerStatus.textContent = providerLabel(task.provider);
+    downloadBtn.href = task.video_url;
+    downloadBtn.style.display = 'inline-flex';
+    playerInfo.style.display = 'flex';
+    
+    document.getElementById('playerVideoTitle').textContent = task.title;
+    document.getElementById('playerProvider').textContent = '提供商：' + providerLabel(task.provider);
+    document.getElementById('playerCreatedAt').textContent = '创建：' + formatTime(task.created_at);
+    document.getElementById('playerDuration').textContent = task.duration > 0 ? `时长：${formatDuration(task.duration)}` : '';
+    
+    player.play().catch(() => {});
+}
+
+// ===== 重试任务 =====
+async function retryTask(id) {
+    try {
+        const resp = await fetch(`${API}/videos/${id}/retry`, { method: 'POST' });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || '重试失败');
+        showToast('任务已重新加入队列', 'success');
+        await loadTasks();
+        startPolling(id);
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+
+// ===== 取消任务 =====
+async function cancelTask(id) {
+    if (!confirm('确定要取消此任务吗？')) return;
+    try {
+        const resp = await fetch(`${API}/videos/${id}`, { method: 'DELETE' });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || '取消失败');
+        showToast('任务已取消', 'info');
+        if (pollingTimers[id]) {
+            clearInterval(pollingTimers[id]);
+            delete pollingTimers[id];
+        }
+        await loadTasks();
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+
+// ===== 删除任务 =====
+function showDeleteModal(id, title) {
+    deleteTaskId = id;
+    document.getElementById('deleteTaskTitle').textContent = title;
+    document.getElementById('deleteModal').classList.add('show');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('show');
+    deleteTaskId = null;
+}
+
+document.getElementById('confirmDeleteBtn').onclick = async function() {
+    if (!deleteTaskId) return;
+    try {
+        const resp = await fetch(`${API}/videos/${deleteTaskId}`, { method: 'DELETE' });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || '删除失败');
+        showToast('任务已删除', 'success');
+        closeDeleteModal();
+        await loadTasks();
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+};
+
+// ===== 加载数字人形象列表 =====
+async function loadAvatars() {
+    try {
+        const resp = await fetch(`${API}/avatars`);
+        const data = await resp.json();
+        if (data.avatars && data.avatars.length > 0) {
+            renderAvatars(data.avatars);
+        }
+    } catch (e) {
+        console.error('loadAvatars error:', e);
+    }
+}
+
+function renderAvatars(avatars) {
+    const icons = { 
+        'default_teacher_male': '👨‍🏫', 
+        'default_teacher_female': '👩‍🏫',
+        'default_teacher_young': '🧑‍🏫'
+    };
+    const defaultIcon = '🧑‍🏫';
+    const grid = document.getElementById('avatarGrid');
+    grid.innerHTML = avatars.map((a, i) => `
+        <div class="avatar-card ${i === 0 ? 'selected' : ''}" data-id="${a.avatar_id}" onclick="selectAvatar(this)">
+            <div class="check-mark">✓</div>
+            <div class="avatar-icon">${icons[a.avatar_id] || defaultIcon}</div>
+            <div class="avatar-name">${escHtml(a.name)}</div>
+            <div class="avatar-desc">${escHtml(a.description || '')}</div>
+        </div>
+    `).join('');
+    if (avatars.length > 0) {
+        selectedAvatarID = avatars[0].avatar_id;
+    }
+}
+
+// ===== 工具函数 =====
+function statusBadge(status) {
+    const map = {
+        pending:    '<span class="badge badge-pending"><span class="badge-dot"></span>等待中</span>',
+        processing: '<span class="badge badge-processing"><span class="badge-dot"></span>生成中</span>',
+        completed:  '<span class="badge badge-completed"><span class="badge-dot"></span>已完成</span>',
+        failed:     '<span class="badge badge-failed"><span class="badge-dot"></span>失败</span>',
+        cancelled:  '<span class="badge" style="background:#e0e0e0;color:#666"><span class="badge-dot"></span>已取消</span>',
+    };
+    return map[status] || `<span class="badge">${status}</span>`;
+}
+
+function providerLabel(p) {
+    return { heygen: 'HeyGen', sadtalker: 'SadTalker', custom: '自定义模型' }[p] || p;
+}
+
+function formatTime(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function formatDuration(seconds) {
+    if (!seconds || seconds <= 0) return '';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${String(s).padStart(2,'0')}`;
+}
+
+function getTextPreview(text) {
+    if (!text) return '';
+    const t = text.substring(0, 50);
+    return t.length < text.length ? t + '…' : t;
+}
+
+function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function showTip(msg, type) {
+    const el = document.getElementById('submitTip');
+    el.style.display = 'flex';
+    el.className = `progress-tip ${type === 'error' ? 'error' : type === 'success' ? 'success' : ''}`;
+    const isLoading = type === 'info';
+    el.innerHTML = isLoading ? `<div class="spinner"></div>${msg}` : msg;
+    
+    // 5秒后自动隐藏（非加载状态）
+    if (!isLoading) {
+        setTimeout(() => { el.style.display = 'none'; }, 5000);
+    }
+}
+
+function showToast(msg, type) {
+    const container = document.getElementById('toastContainer');
+    const el = document.createElement('div');
+    el.className = `toast toast-${type}`;
+    el.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '✗' : 'ℹ'}</span><span>${msg}</span>`;
+    container.appendChild(el);
+    setTimeout(() => { 
+        el.style.opacity = '0'; 
+        el.style.transition = 'opacity 0.3s'; 
+        setTimeout(() => el.remove(), 300); 
+    }, 4000);
+}
+</script>
+</body>
+</html>

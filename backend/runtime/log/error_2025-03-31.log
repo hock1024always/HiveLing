@@ -1,0 +1,33 @@
+{"level":"error","msg":"[]","mysql connect error":"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.","time":"2025-03-31 15:20:21"}
+{"level":"error","msg":"[]","mysql connect error":"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.","time":"2025-03-31 15:22:24"}
+{"level":"error","msg":"[]","mysql connect error":"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.","time":"2025-03-31 15:22:59"}
+Mon, 31 Mar 2025 15:23:15 CST - [::1] "POST /ppt/resource HTTP/1.1 200 76.8866ms "" "
+{"level":"error","msg":"[]","mysql connect error":"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.","time":"2025-03-31 15:40:21"}
+Mon, 31 Mar 2025 15:40:25 CST - [::1] "POST /user/register HTTP/1.1 200 0s "" "
+{"level":"error","msg":"[]","mysql connect error":"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.","time":"2025-03-31 15:41:16"}
+Mon, 31 Mar 2025 15:41:26 CST - [::1] "POST /user/register HTTP/1.1 200 0s "" "
+{"level":"error","msg":"[]","mysql connect error":"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.","time":"2025-03-31 15:42:11"}
+Mon, 31 Mar 2025 15:42:14 CST - [::1] "POST /user/register HTTP/1.1 200 507.9µs "" "
+{"level":"error","msg":"[]","mysql connect error":"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.","time":"2025-03-31 15:42:42"}
+Mon, 31 Mar 2025 15:42:44 CST - [::1] "POST /user/register HTTP/1.1 200 1.5068ms "" "
+{"level":"error","msg":"[]","mysql connect error":"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.","time":"2025-03-31 15:47:19"}
+Mon, 31 Mar 2025 15:47:24 CST - [::1] "POST /user/register HTTP/1.1 200 3.1515934s "" "
+Mon, 31 Mar 2025 15:48:35 CST - [::1] "POST /user/register/verify HTTP/1.1 200 0s "" "
+Mon, 31 Mar 2025 15:50:22 CST - [::1] "POST /user/register HTTP/1.1 200 610.7585ms "" "
+{"level":"error","msg":"[]","mysql connect error":"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.","time":"2025-03-31 16:13:32"}
+Mon, 31 Mar 2025 16:13:35 CST - [::1] "POST /user/login HTTP/1.1 200 509.3µs "" "
+{"level":"error","msg":"[]","mysql connect error":"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.","time":"2025-03-31 16:22:16"}
+Mon, 31 Mar 2025 16:22:19 CST - [::1] "POST /ppt/review HTTP/1.1 200 503.9µs "" "
+{"level":"error","msg":"[]","mysql connect error":"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.","time":"2025-03-31 16:25:01"}
+Mon, 31 Mar 2025 16:25:03 CST - [::1] "POST /ppt/review HTTP/1.1 200 505.1µs "" "
+{"level":"error","msg":"[]","mysql connect error":"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.","time":"2025-03-31 16:31:38"}
+Mon, 31 Mar 2025 16:32:34 CST - [::1] "POST /ppt/resource HTTP/1.1 200 78.52ms "" Error #01: http: wrote more than the declared Content-Length
+"
+{"level":"error","msg":"[]","mysql connect error":"dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.","time":"2025-03-31 21:34:22"}
+Mon, 31 Mar 2025 21:35:18 CST - [::1] "GET /digital/:example.mp4 HTTP/1.1 404 0s "" "
+Mon, 31 Mar 2025 21:35:29 CST - [::1] "GET /digital/example.mp4 HTTP/1.1 404 0s "" "
+Mon, 31 Mar 2025 21:35:45 CST - [::1] "GET /ai/digital/example.mp4 HTTP/1.1 200 23.2257ms "" "
+Mon, 31 Mar 2025 21:36:04 CST - [::1] "GET /ai/digital/example.mp4 HTTP/1.1 200 19.1594ms "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36" "
+Mon, 31 Mar 2025 21:36:04 CST - [::1] "GET /ai/digital/example.mp4 HTTP/1.1 206 29.8522ms "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36" "
+Mon, 31 Mar 2025 21:36:04 CST - [::1] "GET /ai/digital/example.mp4 HTTP/1.1 206 0s "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36" "
+Mon, 31 Mar 2025 21:36:06 CST - [::1] "GET /ai/digital/example.mp4 HTTP/1.1 206 15.4849ms "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36" "

@@ -1,0 +1,92 @@
+panic error tome:2025-03-12 03:37:12
+runtime error: invalid memory address or nil pointer dereference
+stacktrace from panicgoroutine 15 [running]:
+runtime/debug.Stack()
+	D:/GoTools/GoPrograms/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.windows-amd64/src/runtime/debug/stack.go:26 +0x5e
+github.com/hock1024always/GoEdu/pkg/logger.Recover.func1()
+	D:/github/GoEdu/pkg/logger/logger.go:157 +0x26a
+panic({0x13eb740?, 0x18f5090?})
+	D:/GoTools/GoPrograms/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.windows-amd64/src/runtime/panic.go:787 +0x132
+github.com/hock1024always/GoEdu/models.ValidateToken(...)
+	D:/github/GoEdu/models/user.go:140
+github.com/hock1024always/GoEdu/controllers.UserController.UserDelete({}, 0xc0002a2000)
+	D:/github/GoEdu/controllers/user.go:151 +0x4c
+github.com/gin-gonic/gin.(*Context).Next(0xc0002a2000)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185 +0x2b
+github.com/hock1024always/GoEdu/router.Router.Sessions.func1(0xc0002a2000)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-contrib/sessions@v1.0.2/sessions.go:54 +0x165
+github.com/gin-gonic/gin.(*Context).Next(...)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185
+github.com/hock1024always/GoEdu/pkg/logger.Recover(0xc0002a2000)
+	D:/github/GoEdu/pkg/logger/logger.go:168 +0x5c
+github.com/gin-gonic/gin.(*Context).Next(...)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185
+github.com/gin-gonic/gin.LoggerWithConfig.func1(0xc0002a2000)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/logger.go:249 +0xe5
+github.com/gin-gonic/gin.(*Context).Next(...)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185
+github.com/gin-gonic/gin.CustomRecoveryWithWriter.func1(0xc0002a2000)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/recovery.go:102 +0x6f
+github.com/gin-gonic/gin.(*Context).Next(...)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185
+github.com/gin-gonic/gin.LoggerWithConfig.func1(0xc0002a2000)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/logger.go:249 +0xe5
+github.com/gin-gonic/gin.(*Context).Next(...)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185
+github.com/gin-gonic/gin.(*Engine).handleHTTPRequest(0xc000107040, 0xc0002a2000)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/gin.go:633 +0x872
+github.com/gin-gonic/gin.(*Engine).ServeHTTP(0xc000107040, {0x1568de0, 0xc000000000}, 0xc0005f6640)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/gin.go:589 +0x1aa
+net/http.serverHandler.ServeHTTP({0x1566918?}, {0x1568de0?, 0xc000000000?}, 0x6?)
+	D:/GoTools/GoPrograms/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.windows-amd64/src/net/http/server.go:3301 +0x8e
+net/http.(*conn).serve(0xc00013ca20, {0x1569ba0, 0xc000687bc0})
+	D:/GoTools/GoPrograms/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.windows-amd64/src/net/http/server.go:2102 +0x625
+created by net/http.(*Server).Serve in goroutine 1
+	D:/GoTools/GoPrograms/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.windows-amd64/src/net/http/server.go:3454 +0x485
+
+panic error tome:2025-03-12 04:01:35
+runtime error: invalid memory address or nil pointer dereference
+stacktrace from panicgoroutine 12 [running]:
+runtime/debug.Stack()
+	D:/GoTools/GoPrograms/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.windows-amd64/src/runtime/debug/stack.go:26 +0x5e
+github.com/hock1024always/GoEdu/pkg/logger.Recover.func1()
+	D:/github/GoEdu/pkg/logger/logger.go:157 +0x26a
+panic({0x100b740?, 0x1515090?})
+	D:/GoTools/GoPrograms/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.windows-amd64/src/runtime/panic.go:787 +0x132
+github.com/hock1024always/GoEdu/models.ValidateToken(...)
+	D:/github/GoEdu/models/user.go:140
+github.com/hock1024always/GoEdu/controllers.UserController.UserDelete({}, 0xc000588100)
+	D:/github/GoEdu/controllers/user.go:153 +0x100
+github.com/gin-gonic/gin.(*Context).Next(0xc000588100)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185 +0x2b
+github.com/hock1024always/GoEdu/router.Router.Sessions.func1(0xc000588100)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-contrib/sessions@v1.0.2/sessions.go:54 +0x165
+github.com/gin-gonic/gin.(*Context).Next(...)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185
+github.com/hock1024always/GoEdu/pkg/logger.Recover(0xc000588100)
+	D:/github/GoEdu/pkg/logger/logger.go:168 +0x5c
+github.com/gin-gonic/gin.(*Context).Next(...)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185
+github.com/gin-gonic/gin.LoggerWithConfig.func1(0xc000588100)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/logger.go:249 +0xe5
+github.com/gin-gonic/gin.(*Context).Next(...)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185
+github.com/gin-gonic/gin.CustomRecoveryWithWriter.func1(0xc000588100)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/recovery.go:102 +0x6f
+github.com/gin-gonic/gin.(*Context).Next(...)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185
+github.com/gin-gonic/gin.LoggerWithConfig.func1(0xc000588100)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/logger.go:249 +0xe5
+github.com/gin-gonic/gin.(*Context).Next(...)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185
+github.com/gin-gonic/gin.(*Engine).handleHTTPRequest(0xc000568b60, 0xc000588100)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/gin.go:633 +0x872
+github.com/gin-gonic/gin.(*Engine).ServeHTTP(0xc000568b60, {0x1188d20, 0xc0006aa000}, 0xc0001be000)
+	D:/GoTools/GoPrograms/pkg/mod/github.com/gin-gonic/gin@v1.10.0/gin.go:589 +0x1aa
+net/http.serverHandler.ServeHTTP({0x1186858?}, {0x1188d20?, 0xc0006aa000?}, 0x6?)
+	D:/GoTools/GoPrograms/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.windows-amd64/src/net/http/server.go:3301 +0x8e
+net/http.(*conn).serve(0xc00013ca20, {0x1189ae0, 0xc0001d6ab0})
+	D:/GoTools/GoPrograms/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.windows-amd64/src/net/http/server.go:2102 +0x625
+created by net/http.(*Server).Serve in goroutine 1
+	D:/GoTools/GoPrograms/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.windows-amd64/src/net/http/server.go:3454 +0x485
+

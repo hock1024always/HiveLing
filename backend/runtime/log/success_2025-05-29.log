@@ -1,0 +1,4 @@
+Thu, 29 May 2025 10:52:42 CST - [127.0.0.1] "POST /static/exam HTTP/1.1 200 504.1µs "" "
+Thu, 29 May 2025 10:53:39 CST - [127.0.0.1] "POST /static/exam HTTP/1.1 200 96.1447ms "" "
+Thu, 29 May 2025 11:09:28 CST - [::1] "POST /static/exam HTTP/1.1 200 0s "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36" "
+Thu, 29 May 2025 11:12:04 CST - [::1] "POST /static/exam HTTP/1.1 200 0s "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36" "

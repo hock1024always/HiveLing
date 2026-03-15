@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 备课工作流 - 慧备灵师</title>
+<style>
+:root { --primary: #8B0000; --primary-light: #a52a2a; --gold: #FFD700; --bg: #f5f5f0; --border: #e2e8f0; --success: #16a34a; --step-done: #16a34a; --step-active: var(--primary); --step-pending: #cbd5e0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; min-height: 100vh; background: var(--bg); }
+
+/* 顶栏 */
+.topbar { background: #1a1a2e; color: #fff; padding: 0.8rem 2rem; display: flex; align-items: center; gap: 1rem; }
+.topbar a { color: #a0aec0; text-decoration: none; font-size: 0.9rem; }
+.topbar a:hover { color: var(--gold); }
+.topbar h1 { font-size: 1.2rem; }
+
+/* 步骤条 */
+.steps { display: flex; align-items: center; justify-content: center; padding: 1.5rem 2rem; background: #fff; border-bottom: 1px solid var(--border); gap: 0; }
+.step { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: var(--step-pending); }
+.step.active { color: var(--step-active); font-weight: 600; }
+.step.done { color: var(--step-done); }
+.step-num { width: 28px; height: 28px; border-radius: 50%; border: 2px solid currentColor; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; }
+.step.done .step-num { background: var(--step-done); color: #fff; border-color: var(--step-done); }
+.step.active .step-num { background: var(--step-active); color: #fff; border-color: var(--step-active); }
+.step-line { width: 60px; height: 2px; background: var(--step-pending); margin: 0 0.3rem; }
+.step-line.done { background: var(--step-done); }
+
+/* 主容器 */
+.container { max-width: 1100px; margin: 1.5rem auto; padding: 0 1.5rem; }
+
+/* 面板 */
+.panel { background: #fff; border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 1.5rem; }
+.panel-title { font-size: 1.1rem; font-weight: 600; color: #333; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+
+/* 输入表单 */
+.form-row { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+.form-group label { font-size: 0.85rem; color: #666; }
+.form-group input, .form-group select { padding: 0.5rem 0.8rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; }
+.form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary); }
+.form-group.full { flex: 1; min-width: 300px; }
+.primary-btn { padding: 0.6rem 1.5rem; background: var(--primary); color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 0.95rem; transition: background 0.2s; }
+.primary-btn:hover { background: var(--primary-light); }
+.primary-btn:disabled { background: #ccc; cursor: not-allowed; }
+.secondary-btn { padding: 0.6rem 1.5rem; background: #fff; color: var(--primary); border: 1px solid var(--primary); border-radius: 8px; cursor: pointer; font-size: 0.95rem; transition: all 0.2s; }
+.secondary-btn:hover { background: #fef2f2; }
+.btn-row { display: flex; gap: 0.8rem; margin-top: 1rem; align-items: center; }
+
+/* 大纲显示 */
+.outline-display { background: #fafaf5; border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; line-height: 1.8; }
+.outline-section { margin-bottom: 1rem; }
+.outline-section h4 { color: var(--primary); font-size: 0.95rem; margin-bottom: 0.3rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+.outline-section ul { padding-left: 1.2rem; }
+.outline-section li { font-size: 0.9rem; color: #555; margin-bottom: 0.2rem; }
+.tag { display: inline-block; background: rgba(139,0,0,0.1); color: var(--primary); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.8rem; margin-right: 0.3rem; margin-bottom: 0.2rem; }
+
+/* 对话修改区 */
+.edit-chat { border: 1px solid var(--border); border-radius: 8px; margin-top: 1rem; }
+.edit-messages { max-height: 300px; overflow-y: auto; padding: 0.8rem; }
+.edit-msg { padding: 0.5rem 0.8rem; margin-bottom: 0.5rem; border-radius: 8px; font-size: 0.9rem; line-height: 1.5; }
+.edit-msg.user { background: #e8f4f8; margin-left: 20%; }
+.edit-msg.assistant { background: #f7f7f2; margin-right: 20%; }
+.edit-input-row { display: flex; gap: 0.5rem; padding: 0.8rem; border-top: 1px solid var(--border); }
+.edit-input-row input { flex: 1; padding: 0.5rem 0.8rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; }
+.edit-input-row input:focus { outline: none; border-color: var(--primary); }
+
+/* 流式输出区 */
+.stream-output { background: #fafaf5; border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; max-height: 500px; overflow-y: auto; font-size: 0.9rem; line-height: 1.8; white-space: pre-wrap; word-break: break-word; margin-top: 1rem; }
+.stream-output h1, .stream-output h2, .stream-output h3 { color: var(--primary); margin: 0.8rem 0 0.3rem; }
+
+/* PPT 下载 */
+.ppt-result { text-align: center; padding: 2rem; }
+.ppt-result .icon { font-size: 4rem; margin-bottom: 1rem; }
+.download-btn { display: inline-block; padding: 0.8rem 2rem; background: var(--success); color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; text-decoration: none; transition: background 0.2s; }
+.download-btn:hover { background: #15803d; }
+
+/* 历史工作流列表 */
+.wf-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.wf-item { display: flex; align-items: center; padding: 0.7rem 1rem; background: #fafaf5; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s; gap: 1rem; }
+.wf-item:hover { border-color: var(--primary); background: #fef2f2; }
+.wf-status { font-size: 0.8rem; padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 500; }
+.wf-status.done { background: #dcfce7; color: #16a34a; }
+.wf-status.failed { background: #fef2f2; color: #dc2626; }
+.wf-status.working { background: #fef3c7; color: #d97706; }
+
+.hidden { display: none !important; }
+.loading-dots::after { content: ''; animation: dots 1.5s infinite; }
+@keyframes dots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+    <a href="index.html">&larr; 返回首页</a>
+    <h1>AI 备课工作流</h1>
+</div>
+
+<!-- 步骤条 -->
+<div class="steps" id="stepsBar">
+    <div class="step active" id="step1"><span class="step-num">1</span> 输入需求</div>
+    <div class="step-line" id="line1"></div>
+    <div class="step" id="step2"><span class="step-num">2</span> 生成大纲</div>
+    <div class="step-line" id="line2"></div>
+    <div class="step" id="step3"><span class="step-num">3</span> 生成教案</div>
+    <div class="step-line" id="line3"></div>
+    <div class="step" id="step4"><span class="step-num">4</span> 生成PPT</div>
+</div>
+
+<div class="container">
+
+<!-- ===== Phase 1: 输入需求 ===== -->
+<div class="panel" id="phaseInput">
+    <div class="panel-title">📝 输入备课需求</div>
+    <div class="form-row">
+        <div class="form-group full">
+            <label>课程主题 *</label>
+            <input type="text" id="inputTopic" placeholder="例如：商鞅变法、长平之战、百家争鸣..." />
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group">
+            <label>学科</label>
+            <select id="inputSubject"><option value="历史">历史</option></select>
+        </div>
+        <div class="form-group">
+            <label>年级</label>
+            <select id="inputGrade">
+                <option value="初中">初中</option>
+                <option value="高中">高中</option>
+                <option value="小学">小学</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>课时（分钟）</label>
+            <input type="number" id="inputDuration" value="45" min="20" max="120" />
+        </div>
+    </div>
+    <div class="btn-row">
+        <button class="primary-btn" id="btnStart" onclick="startWorkflow()">生成大纲</button>
+        <span id="startStatus" style="color:#999;font-size:0.85rem;"></span>
+    </div>
+</div>
+
+<!-- ===== Phase 2: 大纲 ===== -->
+<div class="panel hidden" id="phaseOutline">
+    <div class="panel-title">📋 课程大纲</div>
+    <div id="outlineContent"></div>
+
+    <!-- 对话修改区 -->
+    <div class="edit-chat" id="editChat">
+        <div class="edit-messages" id="editMessages"></div>
+        <div class="edit-input-row">
+            <input type="text" id="editInput" placeholder="输入修改意见，如：把导入环节改为情境导入..." onkeydown="if(event.key==='Enter')editOutline()" />
+            <button class="primary-btn" id="btnEdit" onclick="editOutline()" style="padding:0.5rem 1rem;">修改</button>
+        </div>
+    </div>
+
+    <div class="btn-row">
+        <button class="primary-btn" id="btnConfirmOutline" onclick="confirmAndGeneratePlan()">确认大纲，生成教案</button>
+        <span id="outlineStatus" style="color:#999;font-size:0.85rem;"></span>
+    </div>
+</div>
+
+<!-- ===== Phase 3: 教案 ===== -->
+<div class="panel hidden" id="phasePlan">
+    <div class="panel-title">📖 教案</div>
+    <div class="stream-output" id="planContent"></div>
+    <div class="btn-row">
+        <button class="primary-btn" id="btnGenPPT" onclick="generatePPT()">生成 PPT</button>
+        <span id="planStatus" style="color:#999;font-size:0.85rem;"></span>
+    </div>
+</div>
+
+<!-- ===== Phase 4: PPT ===== -->
+<div class="panel hidden" id="phasePPT">
+    <div class="panel-title">📊 PPT</div>
+    <div class="ppt-result" id="pptResult">
+        <div class="icon">📊</div>
+        <p style="color:#666;margin-bottom:1rem;">PPT 生成完成</p>
+        <a class="download-btn" id="pptDownload" href="#" target="_blank">下载 PPT</a>
+    </div>
+</div>
+
+<!-- ===== 历史工作流 ===== -->
+<div class="panel" id="phaseHistory">
+    <div class="panel-title">📂 历史备课记录</div>
+    <div class="wf-list" id="wfList"><div style="color:#999;font-size:0.9rem;">加载中...</div></div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+const API_BASE = window.location.origin;
+let workflowId = '';
+let currentOutline = null;
+
+// ============================
+// 步骤条控制
+// ============================
+function setStep(n) {
+    for (let i = 1; i <= 4; i++) {
+        const step = document.getElementById('step' + i);
+        const line = document.getElementById('line' + (i-1));
+        step.className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
+        if (line) line.className = 'step-line' + (i <= n ? ' done' : '');
+    }
+}
+
+// ============================
+// Phase 1: 启动工作流
+// ============================
+async function startWorkflow() {
+    const topic = document.getElementById('inputTopic').value.trim();
+    if (!topic) { alert('请输入课程主题'); return; }
+
+    const subject = document.getElementById('inputSubject').value;
+    const grade = document.getElementById('inputGrade').value;
+    const duration = parseInt(document.getElementById('inputDuration').value) || 45;
+
+    document.getElementById('btnStart').disabled = true;
+    document.getElementById('startStatus').textContent = '正在生成大纲...';
+    document.getElementById('startStatus').className = 'loading-dots';
+
+    try {
+        const res = await fetch(`${API_BASE}/api/lessonprep/start`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ topic, subject, grade, duration })
+        });
+
+        await processSSE(res, {
+            onStatus: (text) => { document.getElementById('startStatus').textContent = text; },
+            onOutline: (outline) => {
+                currentOutline = outline;
+                renderOutline(outline);
+                document.getElementById('phaseOutline').classList.remove('hidden');
+                setStep(2);
+            },
+            onDone: (evt) => {
+                if (evt.workflow_id) workflowId = evt.workflow_id;
+                document.getElementById('startStatus').textContent = '';
+                document.getElementById('startStatus').className = '';
+                document.getElementById('phaseHistory').classList.add('hidden');
+            },
+            onError: (text) => {
+                document.getElementById('startStatus').textContent = '错误: ' + text;
+                document.getElementById('startStatus').className = '';
+            }
+        });
+    } catch(e) {
+        document.getElementById('startStatus').textContent = '请求失败: ' + e.message;
+        document.getElementById('startStatus').className = '';
+    }
+    document.getElementById('btnStart').disabled = false;
+}
+
+// ============================
+// Phase 2: 渲染大纲
+// ============================
+function renderOutline(o) {
+    let html = `<div class="outline-display">`;
+    html += `<h3 style="color:var(--primary);margin-bottom:0.8rem;">${esc(o.title)}</h3>`;
+    html += `<div style="margin-bottom:0.5rem;"><span class="tag">${esc(o.subject)}</span><span class="tag">${esc(o.grade)}</span><span class="tag">${o.duration}分钟</span></div>`;
+
+    if (o.objectives) {
+        html += `<div class="outline-section"><h4>教学目标</h4><ul>`;
+        if (o.objectives.knowledge) html += `<li><strong>知识与技能：</strong>${esc(o.objectives.knowledge)}</li>`;
+        if (o.objectives.ability) html += `<li><strong>过程与方法：</strong>${esc(o.objectives.ability)}</li>`;
+        if (o.objectives.emotion) html += `<li><strong>情感态度：</strong>${esc(o.objectives.emotion)}</li>`;
+        html += `</ul></div>`;
+    }
+
+    if (o.key_points && o.key_points.length) {
+        html += `<div class="outline-section"><h4>教学重点</h4><ul>${o.key_points.map(p => `<li>${esc(p)}</li>`).join('')}</ul></div>`;
+    }
+    if (o.difficult_points && o.difficult_points.length) {
+        html += `<div class="outline-section"><h4>教学难点</h4><ul>${o.difficult_points.map(p => `<li>${esc(p)}</li>`).join('')}</ul></div>`;
+    }
+    if (o.teaching_methods && o.teaching_methods.length) {
+        html += `<div class="outline-section"><h4>教学方法</h4><div>${o.teaching_methods.map(m => `<span class="tag">${esc(m)}</span>`).join('')}</div></div>`;
+    }
+
+    if (o.process && o.process.length) {
+        html += `<div class="outline-section"><h4>教学过程</h4><table style="width:100%;border-collapse:collapse;font-size:0.9rem;">`;
+        html += `<tr style="background:#f0f0ea;"><th style="padding:0.4rem 0.6rem;text-align:left;border-bottom:1px solid #ddd;">环节</th><th style="padding:0.4rem;border-bottom:1px solid #ddd;">时间</th><th style="padding:0.4rem 0.6rem;text-align:left;border-bottom:1px solid #ddd;">活动</th><th style="padding:0.4rem 0.6rem;text-align:left;border-bottom:1px solid #ddd;">方法</th></tr>`;
+        o.process.forEach(p => {
+            html += `<tr><td style="padding:0.4rem 0.6rem;border-bottom:1px solid #eee;font-weight:500;">${esc(p.stage)}</td><td style="padding:0.4rem;border-bottom:1px solid #eee;text-align:center;">${p.duration}min</td><td style="padding:0.4rem 0.6rem;border-bottom:1px solid #eee;">${esc(p.activity)}</td><td style="padding:0.4rem 0.6rem;border-bottom:1px solid #eee;">${esc(p.method||'')}</td></tr>`;
+        });
+        html += `</table></div>`;
+    }
+
+    if (o.board_design) {
+        html += `<div class="outline-section"><h4>板书设计</h4><p style="font-size:0.9rem;color:#555;white-space:pre-wrap;">${esc(o.board_design)}</p></div>`;
+    }
+
+    html += `</div>`;
+    document.getElementById('outlineContent').innerHTML = html;
+}
+
+// ============================
+// Phase 2b: 对话修改大纲
+// ============================
+async function editOutline() {
+    const input = document.getElementById('editInput');
+    const msg = input.value.trim();
+    if (!msg || !workflowId) return;
+
+    input.value = '';
+    appendEditMsg('user', msg);
+    document.getElementById('btnEdit').disabled = true;
+    document.getElementById('outlineStatus').textContent = '正在修改大纲...';
+    document.getElementById('outlineStatus').className = 'loading-dots';
+
+    let assistantText = '';
+
+    try {
+        const res = await fetch(`${API_BASE}/api/lessonprep/outline/edit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ workflow_id: workflowId, message: msg })
+        });
+
+        await processSSE(res, {
+            onText: (text) => { assistantText += text; },
+            onOutline: (outline) => {
+                currentOutline = outline;
+                renderOutline(outline);
+            },
+            onDone: () => {
+                if (assistantText) appendEditMsg('assistant', assistantText);
+                document.getElementById('outlineStatus').textContent = '';
+                document.getElementById('outlineStatus').className = '';
+            },
+            onError: (text) => {
+                appendEditMsg('assistant', '错误: ' + text);
+                document.getElementById('outlineStatus').textContent = '';
+                document.getElementById('outlineStatus').className = '';
+            }
+        });
+    } catch(e) {
+        appendEditMsg('assistant', '请求失败: ' + e.message);
+    }
+    document.getElementById('btnEdit').disabled = false;
+}
+
+function appendEditMsg(role, text) {
+    const container = document.getElementById('editMessages');
+    const div = document.createElement('div');
+    div.className = 'edit-msg ' + role;
+    div.textContent = text.length > 300 ? text.slice(0, 300) + '...(已截取)' : text;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+// ============================
+// Phase 3: 确认大纲并生成教案
+// ============================
+async function confirmAndGeneratePlan() {
+    if (!workflowId) return;
+
+    // 先确认大纲
+    try {
+        await fetch(`${API_BASE}/api/lessonprep/outline/confirm`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ workflow_id: workflowId })
+        });
+    } catch(e) { /* 忽略确认失败 */ }
+
+    document.getElementById('btnConfirmOutline').disabled = true;
+    document.getElementById('outlineStatus').textContent = '正在生成教案...';
+    document.getElementById('outlineStatus').className = 'loading-dots';
+
+    document.getElementById('phasePlan').classList.remove('hidden');
+    setStep(3);
+
+    const planEl = document.getElementById('planContent');
+    planEl.innerHTML = '';
+    let fullPlan = '';
+
+    try {
+        const res = await fetch(`${API_BASE}/api/lessonprep/plan/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ workflow_id: workflowId })
+        });
+
+        await processSSE(res, {
+            onText: (text) => {
+                fullPlan += text;
+                planEl.innerHTML = renderMarkdown(fullPlan);
+                planEl.scrollTop = planEl.scrollHeight;
+            },
+            onDone: () => {
+                document.getElementById('outlineStatus').textContent = '';
+                document.getElementById('outlineStatus').className = '';
+                document.getElementById('btnConfirmOutline').disabled = false;
+            },
+            onError: (text) => {
+                planEl.innerHTML += `<br><span style="color:red;">错误: ${text}</span>`;
+                document.getElementById('outlineStatus').textContent = '';
+                document.getElementById('outlineStatus').className = '';
+                document.getElementById('btnConfirmOutline').disabled = false;
+            }
+        });
+    } catch(e) {
+        planEl.innerHTML += `<br><span style="color:red;">请求失败: ${e.message}</span>`;
+        document.getElementById('btnConfirmOutline').disabled = false;
+    }
+}
+
+// ============================
+// Phase 4: 生成 PPT
+// ============================
+async function generatePPT() {
+    if (!workflowId) return;
+
+    document.getElementById('btnGenPPT').disabled = true;
+    document.getElementById('planStatus').textContent = '正在生成 PPT...';
+    document.getElementById('planStatus').className = 'loading-dots';
+
+    try {
+        const res = await fetch(`${API_BASE}/api/lessonprep/ppt/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ workflow_id: workflowId })
+        });
+
+        await processSSE(res, {
+            onPPT: (data) => {
+                document.getElementById('phasePPT').classList.remove('hidden');
+                const url = data.download_url || `/api/lessonprep/ppt/download?workflow_id=${workflowId}`;
+                document.getElementById('pptDownload').href = `${API_BASE}${url}`;
+                setStep(4);
+            },
+            onStatus: (text) => { document.getElementById('planStatus').textContent = text; },
+            onDone: () => {
+                document.getElementById('planStatus').textContent = '完成';
+                document.getElementById('planStatus').className = '';
+                // 也显示 PPT 面板（以防 onPPT 没触发）
+                if (document.getElementById('phasePPT').classList.contains('hidden')) {
+                    document.getElementById('phasePPT').classList.remove('hidden');
+                    document.getElementById('pptDownload').href = `${API_BASE}/api/lessonprep/ppt/download?workflow_id=${workflowId}`;
+                    setStep(4);
+                }
+            },
+            onError: (text) => {
+                document.getElementById('planStatus').textContent = '错误: ' + text;
+                document.getElementById('planStatus').className = '';
+            }
+        });
+    } catch(e) {
+        document.getElementById('planStatus').textContent = '请求失败: ' + e.message;
+        document.getElementById('planStatus').className = '';
+    }
+    document.getElementById('btnGenPPT').disabled = false;
+}
+
+// ============================
+// 通用 SSE 处理器
+// ============================
+async function processSSE(response, handlers) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // 保留不完整的行
+
+        for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            try {
+                const evt = JSON.parse(line.slice(6));
+                switch(evt.type) {
+                    case 'status':  handlers.onStatus?.(evt.content); break;
+                    case 'text':    handlers.onText?.(evt.content); break;
+                    case 'outline': handlers.onOutline?.(evt.data); break;
+                    case 'plan':    handlers.onPlan?.(evt.content); break;
+                    case 'ppt':     handlers.onPPT?.(evt.data); break;
+                    case 'error':   handlers.onError?.(evt.content); break;
+                    case 'done':    handlers.onDone?.(evt); break;
+                }
+            } catch(e) { /* 跳过 */ }
+        }
+    }
+}
+
+// ============================
+// 加载历史工作流
+// ============================
+async function loadHistory() {
+    try {
+        const res = await fetch(`${API_BASE}/api/lessonprep/list`);
+        const data = await res.json();
+        const list = document.getElementById('wfList');
+        const wfs = data.workflows || [];
+        if (wfs.length === 0) {
+            list.innerHTML = '<div style="color:#999;font-size:0.9rem;">暂无备课记录，请开始第一次备课。</div>';
+            return;
+        }
+        list.innerHTML = wfs.map(wf => {
+            const statusMap = { done: 'done', failed: 'failed' };
+            const statusClass = statusMap[wf.status] || 'working';
+            const statusText = { init:'准备中', outline_generating:'生成大纲中', outline_ready:'大纲就绪', outline_editing:'修改大纲中', plan_generating:'生成教案中', plan_ready:'教案就绪', ppt_generating:'生成PPT中', done:'已完成', failed:'失败' }[wf.status] || wf.status;
+            return `<div class="wf-item" onclick="resumeWorkflow('${wf.id}')">
+                <span class="wf-status ${statusClass}">${statusText}</span>
+                <strong style="font-size:0.95rem;">${esc(wf.topic)}</strong>
+                <span style="color:#999;font-size:0.8rem;margin-left:auto;">${new Date(wf.created_at).toLocaleDateString()}</span>
+            </div>`;
+        }).join('');
+    } catch(e) {
+        document.getElementById('wfList').innerHTML = `<div style="color:#999;">加载失败: ${e.message}</div>`;
+    }
+}
+
+async function resumeWorkflow(wfId) {
+    try {
+        const res = await fetch(`${API_BASE}/api/lessonprep/status?workflow_id=${wfId}`);
+        const data = await res.json();
+        workflowId = wfId;
+
+        // 隐藏历史面板
+        document.getElementById('phaseHistory').classList.add('hidden');
+
+        // 恢复大纲
+        if (data.outline) {
+            currentOutline = data.outline;
+            renderOutline(data.outline);
+            document.getElementById('phaseOutline').classList.remove('hidden');
+            setStep(2);
+        }
+
+        // 恢复教案
+        if (data.has_plan) {
+            const planRes = await fetch(`${API_BASE}/api/lessonprep/plan?workflow_id=${wfId}`);
+            const planData = await planRes.json();
+            if (planData.lesson_plan) {
+                document.getElementById('planContent').innerHTML = renderMarkdown(planData.lesson_plan);
+                document.getElementById('phasePlan').classList.remove('hidden');
+                setStep(3);
+            }
+        }
+
+        // 恢复 PPT
+        if (data.has_ppt) {
+            document.getElementById('phasePPT').classList.remove('hidden');
+            document.getElementById('pptDownload').href = `${API_BASE}${data.ppt_download_url}`;
+            setStep(4);
+        }
+
+        // 填充输入
+        document.getElementById('inputTopic').value = data.topic || '';
+    } catch(e) {
+        alert('恢复工作流失败: ' + e.message);
+    }
+}
+
+// ============================
+// 工具函数
+// ============================
+function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function renderMarkdown(text) {
+    if (!text) return '';
+    return text
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
+}
+
+// 初始化
+loadHistory();
+</script>
+</body>
+</html>
