@@ -12,6 +12,8 @@ type Config struct {
 	MySQL     MySQLConfig
 	Redis     RedisConfig
 	Server    ServerConfig
+	Milvus    MilvusConfig
+	Embedding EmbeddingConfig
 }
 
 type DeepSeekConfig struct {
@@ -41,6 +43,22 @@ type RedisConfig struct {
 type ServerConfig struct {
 	Port    int
 	GinMode string
+}
+
+// MilvusConfig Milvus 向量数据库配置
+type MilvusConfig struct {
+	Host         string
+	Port         int
+	Collection   string // 集合名称
+	Dimension    int    // 向量维度
+	Enabled      bool   // 是否启用向量检索
+}
+
+// EmbeddingConfig Embedding 配置
+type EmbeddingConfig struct {
+	Provider string // deepseek, openai, local
+	Model    string // 模型名称
+	Dimension int   // 向量维度
 }
 
 // AppConfig 全局配置实例
@@ -73,6 +91,18 @@ func InitConfig() {
 			Port:    getEnvInt("SERVER_PORT", 9090),
 			GinMode: getEnv("GIN_MODE", "debug"),
 		},
+		Milvus: MilvusConfig{
+			Host:       getEnv("MILVUS_HOST", "localhost"),
+			Port:       getEnvInt("MILVUS_PORT", 19530),
+			Collection: getEnv("MILVUS_COLLECTION", "knowledge_vectors"),
+			Dimension:  getEnvInt("MILVUS_DIMENSION", 1536),
+			Enabled:    getEnvBool("MILVUS_ENABLED", false),
+		},
+		Embedding: EmbeddingConfig{
+			Provider:  getEnv("EMBEDDING_PROVIDER", "deepseek"),
+			Model:     getEnv("EMBEDDING_MODEL", "text-embedding-3-small"),
+			Dimension: getEnvInt("EMBEDDING_DIMENSION", 1536),
+		},
 	}
 }
 
@@ -89,6 +119,16 @@ func getEnvInt(key string, defaultValue int) int {
 	if value := os.Getenv(key); value != "" {
 		if intVal, err := strconv.Atoi(value); err == nil {
 			return intVal
+		}
+	}
+	return defaultValue
+}
+
+// getEnvBool 获取布尔类型环境变量
+func getEnvBool(key string, defaultValue bool) bool {
+	if value := os.Getenv(key); value != "" {
+		if boolVal, err := strconv.ParseBool(value); err == nil {
+			return boolVal
 		}
 	}
 	return defaultValue

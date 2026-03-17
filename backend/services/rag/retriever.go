@@ -1,13 +1,17 @@
 package rag
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
+	"github.com/hock1024always/GoEdu/config"
 	"github.com/hock1024always/GoEdu/dao"
 	"github.com/hock1024always/GoEdu/models"
+	"github.com/hock1024always/GoEdu/services/cache"
 	"gorm.io/gorm"
 )
 
@@ -16,18 +20,137 @@ type SearchResult struct {
 	Chunk    *models.KnowledgeChunk `json:"chunk"`
 	Score    float64                `json:"score"`
 	Keywords []string               `json:"keywords"`
+	Source   string                 `json:"source"` // "vector", "keyword", "hybrid", "cache"
 }
 
 // Retriever 检索器
-type Retriever struct{}
+type Retriever struct {
+	milvusClient    *MilvusClient
+	embeddingSvc    *EmbeddingService
+	cacheSvc        *cache.CacheService
+	useVectorSearch bool
+	cacheEnabled    bool
+}
 
 // NewRetriever 创建检索器
 func NewRetriever() *Retriever {
-	return &Retriever{}
+	milvusClient, err := NewMilvusClient()
+	if err != nil {
+		milvusClient = &MilvusClient{enabled: false}
+	}
+
+	cacheSvc := cache.NewCacheService()
+
+	return &Retriever{
+		milvusClient:    milvusClient,
+		embeddingSvc:    NewEmbeddingService(),
+		cacheSvc:        cacheSvc,
+		useVectorSearch: config.AppConfig.Milvus.Enabled,
+		cacheEnabled:    cacheSvc.IsEnabled(),
+	}
 }
 
-// Search 搜索知识库
+// Search 搜索知识库（智能选择检索方式，带缓存）
 func (r *Retriever) Search(query string, category string, limit int) ([]SearchResult, error) {
+	if limit <= 0 {
+		limit = 5
+	}
+
+	// 尝试从缓存获取
+	if r.cacheEnabled {
+		ctx := context.Background()
+		cacheKey := cache.SearchCacheKey(query, category, limit, r.useVectorSearch)
+		var cachedResults []SearchResult
+		if err := r.cacheSvc.Get(ctx, cacheKey, &cachedResults); err == nil {
+			// 缓存命中，标记来源
+			for i := range cachedResults {
+				cachedResults[i].Source = "cache"
+			}
+			return cachedResults, nil
+		}
+	}
+
+	// 缓存未命中，执行检索
+	var results []SearchResult
+	var err error
+
+	// 如果启用了向量检索，使用混合检索
+	if r.useVectorSearch && r.milvusClient.IsEnabled() {
+		results, err = r.HybridSearch(query, category, limit)
+	} else {
+		// 否则使用关键词检索
+		results, err = r.KeywordSearch(query, category, limit)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	// 异步缓存结果
+	if r.cacheEnabled && len(results) > 0 {
+		go func() {
+			bgCtx := context.Background()
+			cacheKey := cache.SearchCacheKey(query, category, limit, r.useVectorSearch)
+			r.cacheSvc.Set(bgCtx, cacheKey, results, 10*time.Minute) // 缓存 10 分钟
+		}()
+	}
+
+	return results, nil
+}
+
+// VectorSearch 向量检索
+func (r *Retriever) VectorSearch(query string, category string, limit int) ([]SearchResult, error) {
+	if !r.milvusClient.IsEnabled() {
+		return nil, fmt.Errorf("vector search not enabled")
+	}
+
+	if limit <= 0 {
+		limit = 5
+	}
+
+	// 获取查询向量
+	queryVector, err := r.embeddingSvc.GetEmbedding(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get embedding: %v", err)
+	}
+
+	// 执行向量搜索
+	results, err := r.milvusClient.Search(queryVector, limit*2, category)
+	if err != nil {
+		return nil, fmt.Errorf("milvus search failed: %v", err)
+	}
+
+	// 转换为 SearchResult
+	searchResults := make([]SearchResult, 0, len(results))
+	for _, result := range results {
+		chunk := &models.KnowledgeChunk{
+			ID:       uint(result.ID),
+			Title:    result.Title,
+			Content:  result.Content,
+			Category: result.Category,
+		}
+		searchResults = append(searchResults, SearchResult{
+			Chunk:    chunk,
+			Score:    float64(result.Score),
+			Source:   "vector",
+			Keywords: extractKeywords(result.Content),
+		})
+	}
+
+	// 按分数排序并限制数量
+	sort.Slice(searchResults, func(i, j int) bool {
+		return searchResults[i].Score > searchResults[j].Score
+	})
+
+	if len(searchResults) > limit {
+		searchResults = searchResults[:limit]
+	}
+
+	return searchResults, nil
+}
+
+// KeywordSearch 关键词检索
+func (r *Retriever) KeywordSearch(query string, category string, limit int) ([]SearchResult, error) {
 	if limit <= 0 {
 		limit = 5
 	}
@@ -85,6 +208,7 @@ func (r *Retriever) Search(query string, category string, limit int) ([]SearchRe
 			Chunk:    &chunks[i],
 			Score:    score,
 			Keywords: extractKeywords(chunks[i].Content),
+			Source:   "keyword",
 		})
 	}
 
@@ -99,6 +223,106 @@ func (r *Retriever) Search(query string, category string, limit int) ([]SearchRe
 	}
 
 	return results, nil
+}
+
+// HybridSearch 混合检索（向量 + 关键词）
+func (r *Retriever) HybridSearch(query string, category string, limit int) ([]SearchResult, error) {
+	if limit <= 0 {
+		limit = 5
+	}
+
+	// 并行执行两种检索
+	vectorResults := make(chan []SearchResult, 1)
+	keywordResults := make(chan []SearchResult, 1)
+	vectorErr := make(chan error, 1)
+	keywordErr := make(chan error, 1)
+
+	// 向量检索
+	go func() {
+		results, err := r.VectorSearch(query, category, limit)
+		vectorResults <- results
+		vectorErr <- err
+	}()
+
+	// 关键词检索
+	go func() {
+		results, err := r.KeywordSearch(query, category, limit)
+		keywordResults <- results
+		keywordErr <- err
+	}()
+
+	// 收集结果
+	vResults := <-vectorResults
+	vErr := <-vectorErr
+	kResults := <-keywordResults
+	kErr := <-keywordErr
+
+	// 如果两种检索都失败，返回错误
+	if vErr != nil && kErr != nil {
+		return nil, fmt.Errorf("both searches failed: vector=%v, keyword=%v", vErr, kErr)
+	}
+
+	// 融合结果
+	return r.mergeResults(vResults, kResults, limit), nil
+}
+
+// mergeResults 融合向量检索和关键词检索结果
+func (r *Retriever) mergeResults(vectorResults, keywordResults []SearchResult, limit int) []SearchResult {
+	// 使用加权融合
+	// 向量检索权重 0.6，关键词检索权重 0.4
+	vectorWeight := 0.6
+	keywordWeight := 0.4
+
+	// 使用 map 去重并合并分数
+	mergedMap := make(map[uint]*SearchResult)
+
+	// 处理向量检索结果
+	for _, result := range vectorResults {
+		id := result.Chunk.ID
+		if existing, ok := mergedMap[id]; ok {
+			// 已存在，合并分数
+			existing.Score = existing.Score*keywordWeight + result.Score*vectorWeight
+			existing.Source = "hybrid"
+		} else {
+			result.Score = result.Score * vectorWeight
+			result.Source = "vector"
+			mergedMap[id] = &result
+		}
+	}
+
+	// 处理关键词检索结果
+	for _, result := range keywordResults {
+		id := result.Chunk.ID
+		if existing, ok := mergedMap[id]; ok {
+			// 已存在，合并分数
+			if existing.Source == "vector" {
+				existing.Score = existing.Score + result.Score*keywordWeight
+				existing.Source = "hybrid"
+			}
+		} else {
+			result.Score = result.Score * keywordWeight
+			result.Source = "keyword"
+			mergedMap[id] = &result
+		}
+	}
+
+	// 转换为切片并排序
+	results := make([]SearchResult, 0, len(mergedMap))
+	for _, result := range mergedMap {
+		results = append(results, *result)
+	}
+
+	// 按分数排序
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Score > results[j].Score
+	})
+
+	// 限制返回数量
+	if len(results) > limit {
+		results = results[:limit]
+	}
+
+	return results
 }
 
 // extractKeywords 提取关键词（简单实现）
@@ -196,8 +420,50 @@ func FormatResults(results []SearchResult) string {
 			"category": r.Chunk.Category,
 			"content":  r.Chunk.Content,
 			"score":    r.Score,
+			"source":   r.Source,
 		})
 	}
 	jsonBytes, _ := json.Marshal(data)
 	return string(jsonBytes)
+}
+
+// Close 关闭资源
+func (r *Retriever) Close() error {
+	if r.milvusClient != nil {
+		r.milvusClient.Close()
+	}
+	if r.cacheSvc != nil {
+		r.cacheSvc.Close()
+	}
+	return nil
+}
+
+// GetCacheStats 获取缓存统计
+func (r *Retriever) GetCacheStats() cache.CacheStats {
+	if r.cacheSvc != nil {
+		return r.cacheSvc.GetStats()
+	}
+	return cache.CacheStats{}
+}
+
+// ClearCache 清除缓存
+func (r *Retriever) ClearCache(pattern string) error {
+	if r.cacheSvc != nil && r.cacheEnabled {
+		ctx := context.Background()
+		if pattern == "" {
+			pattern = "search:*" // 默认清除搜索缓存
+		}
+		return r.cacheSvc.DeleteByPattern(ctx, pattern)
+	}
+	return nil
+}
+
+// UseVectorSearch 返回是否启用向量检索
+func (r *Retriever) UseVectorSearch() bool {
+	return r.useVectorSearch && r.milvusClient != nil && r.milvusClient.IsEnabled()
+}
+
+// IsCacheEnabled 返回是否启用缓存
+func (r *Retriever) IsCacheEnabled() bool {
+	return r.cacheEnabled
 }

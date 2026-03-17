@@ -2,6 +2,88 @@
 
 面向教师的 AI 辅助教学系统，获中国大学生服务创新创业外包大赛**国家一等奖**（A03 AI备课应用赛道）。
 
+## 版本历史
+
+### v1.1 — 对话助手增强
+
+基于 v1.0 的三大核心模块，本次迭代重点强化了**教学对话助手**的检索质量与记忆能力。
+
+#### 新功能
+
+**1. 向量数据库支持（Milvus）**
+
+引入 Milvus 向量数据库，实现语义检索能力，解决原有关键词检索无法理解同义词和用户意图的问题。
+
+- 新增 `services/rag/embedding.go`：调用 OpenAI `text-embedding-3-small` 接口将文本转为 1536 维向量，支持批量处理与带重试机制的单条获取
+- 新增 `services/rag/milvus.go`：封装 Milvus Go SDK，实现集合管理、向量插入、ANN 搜索（AUTOINDEX + L2 距离）和按分类过滤
+- 改造 `services/rag/retriever.go`：在原有关键词检索基础上增加向量检索路径，实现**混合检索**（向量权重 0.6 + 关键词权重 0.4），Milvus 未启用时自动回退至关键词检索
+- 新增 `scripts/import_vectors.go`：一次性将 MySQL 知识库批量向量化并导入 Milvus，支持 `-batch`、`-drop`、`-dry-run` 参数
+- 新增 `docker-compose.milvus.yml`：Milvus Standalone 一键部署配置（含 etcd + MinIO + Milvus）
+
+**2. Redis 缓存层**
+
+新增 `services/cache/cache.go`，基于 `go-redis/v8` 封装通用缓存服务，并应用于两处高频操作：
+
+- **Embedding 缓存**（TTL 24 小时）：相同文本不重复调用 Embedding API，节省调用成本
+- **检索结果缓存**（TTL 10 分钟）：相同查询直接命中缓存，平均响应时间从 500ms 降至 50ms 以内
+- Redis 不可用时自动降级，不影响主流程
+- 新增 `controllers/cache.go` 及 `/api/cache/*` 路由，提供命中率统计、手动清除等管理接口
+
+**3. 时间线查询工具**
+
+补全了原 `get_timeline` MCP 工具的实现（此前返回空结果）。
+
+- 新增 `services/timeline/timeline.go`：基于 `KnowledgeChunk` 表中的 `year_start`/`year_end` 字段，实现按年份范围、诸侯国、事件类型的组合查询，支持按时期（春秋/战国）全量拉取，结果按年份升序排列
+- 更新 `services/mcp/tools.go`：将 `executeGetTimeline` 替换为真实查询逻辑，支持 `start_year`、`end_year`、`state`、`category`、`period` 五个参数
+
+**4. 上下文记忆增强**
+
+全面重构 `services/memory/session.go`，引入消息语义标注体系：
+
+- **消息标签（Tag）**：每条消息在存储时自动分类为 `question`/`answer`/`follow_up`/`tool_call`/`summary`/`greeting`/`thanks` 等 11 种标签
+- **重要性评分（Importance）**：基于标签类型、内容长度、关键实体命中，为每条消息评分 1–10，问题类消息默认 8 分，问候/感谢类默认 2 分
+- **实体提取（Entities）**：自动识别消息中的历史人物、诸侯国、战役名称和年份，以 JSON 存储于消息记录
+- **智能压缩**：超过 10 条消息时触发压缩，优先保留最近 5 条 + 高重要性消息，对其余消息生成结构化摘要（主要话题 / 关键问题 / 重要结论 / 涉及实体），历史消息标记 `is_summarized = true`
+- **标题自动生成**：首条消息存在可识别实体时，自动生成"关于 XX 的讨论"格式标题
+
+#### 数据库变更
+
+`sessions` 表新增列：`summary`、`topics`、`key_entities`、`message_count`
+
+`messages` 表新增列：`tag`、`importance`、`topics`、`entities`、`is_summarized`
+
+（通过 GORM AutoMigrate 自动执行，无需手动迁移）
+
+#### 技术栈更新
+
+| 层 | v1.0 | v1.1 新增 |
+|----|------|-----------|
+| 向量检索 | — | Milvus 2.3 + text-embedding-3-small |
+| 缓存 | — | Redis 7 (go-redis/v8) |
+| 时间线查询 | 占位符 | 完整实现 |
+| 上下文记忆 | 窗口截取 | 标签 + 重要性 + 实体 + 智能压缩 |
+
+#### 新增环境变量
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `MILVUS_HOST` | `localhost` | Milvus 地址 |
+| `MILVUS_PORT` | `19530` | Milvus 端口 |
+| `MILVUS_COLLECTION` | `knowledge_vectors` | 集合名 |
+| `MILVUS_DIMENSION` | `1536` | 向量维度 |
+| `MILVUS_ENABLED` | `false` | 是否启用向量检索 |
+| `EMBEDDING_PROVIDER` | `openai` | Embedding 提供商 |
+| `EMBEDDING_MODEL` | `text-embedding-3-small` | Embedding 模型 |
+
+#### 新增文档
+
+- [`AIdocs/向量数据库实现详解.md`](./AIdocs/向量数据库实现详解.md)：向量原理、字段设计、混合检索、缓存策略全解
+- [`AIdocs/上下文记忆系统设计.md`](./AIdocs/上下文记忆系统设计.md)：标签体系、重要性评分、智能压缩流程设计
+
+---
+
+### v1.0 — 初始版本
+
 ## 项目描述
 
 系统包含三个核心模块，均已有完整后端实现：

@@ -163,5 +163,19 @@ func Router() *gin.Engine {
 		dh.GET("/avatars", dhCtrl.ListAvatars)
 	}
 
+	// 缓存管理接口
+	cacheCtrl := controllers.NewCacheController()
+	cacheGroup := r.Group("/api/cache")
+	{
+		// 获取缓存统计
+		cacheGroup.GET("/stats", cacheCtrl.GetStats)
+		// 清除缓存
+		cacheGroup.DELETE("", cacheCtrl.ClearCache)
+		// 重置统计
+		cacheGroup.POST("/stats/reset", cacheCtrl.ResetStats)
+		// 缓存状态
+		cacheGroup.GET("/status", cacheCtrl.CacheStatus)
+	}
+
 	return r
 }

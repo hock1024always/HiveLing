@@ -11,19 +11,22 @@ import (
 	"github.com/hock1024always/GoEdu/config"
 	"github.com/hock1024always/GoEdu/services/graph"
 	"github.com/hock1024always/GoEdu/services/rag"
+	"github.com/hock1024always/GoEdu/services/timeline"
 )
 
 // ToolExecutor 工具执行器
 type ToolExecutor struct {
-	retriever   *rag.Retriever
-	graphQuery  *graph.QueryService
+	retriever     *rag.Retriever
+	graphQuery    *graph.QueryService
+	timelineSvc   *timeline.Service
 }
 
 // NewToolExecutor 创建工具执行器
 func NewToolExecutor() *ToolExecutor {
 	return &ToolExecutor{
-		retriever:   rag.NewRetriever(),
-		graphQuery:  graph.NewQueryService(),
+		retriever:     rag.NewRetriever(),
+		graphQuery:    graph.NewQueryService(),
+		timelineSvc:   timeline.NewService(),
 	}
 }
 
@@ -125,23 +128,37 @@ func (e *ToolExecutor) executeGetTimeline(arguments json.RawMessage) (string, er
 		StartYear int    `json:"start_year"`
 		EndYear   int    `json:"end_year"`
 		State     string `json:"state"`
+		Category  string `json:"category"`
+		Period    string `json:"period"`
 	}
 
 	if err := json.Unmarshal(arguments, &args); err != nil {
 		return "", fmt.Errorf("failed to parse arguments: %v", err)
 	}
 
-	// TODO: 实现时间线查询
-	result := map[string]interface{}{
-		"start_year": args.StartYear,
-		"end_year":   args.EndYear,
-		"state":      args.State,
-		"events":     []map[string]string{},
-		"message":    "时间线查询功能开发中",
+	var result *timeline.TimelineResult
+	var err error
+
+	// 根据参数选择查询方式
+	if args.Period != "" && args.StartYear == 0 && args.EndYear == 0 {
+		// 按时期查询
+		result, err = e.timelineSvc.GetEventsByPeriod(args.Period, 50)
+	} else if args.StartYear != 0 || args.EndYear != 0 || args.State != "" {
+		// 按年份范围和/或诸侯国查询
+		result, err = e.timelineSvc.GetTimeline(args.StartYear, args.EndYear, args.State, args.Category)
+	} else if args.Category != "" {
+		// 按分类查询重要事件
+		result, err = e.timelineSvc.GetImportantEvents(args.Category, 30)
+	} else {
+		// 默认返回春秋战国时期的重要事件
+		result, err = e.timelineSvc.GetTimeline(-770, -221, "", "")
 	}
 
-	jsonBytes, _ := json.Marshal(result)
-	return string(jsonBytes), nil
+	if err != nil {
+		return "", fmt.Errorf("timeline query failed: %v", err)
+	}
+
+	return e.timelineSvc.FormatResultJSON(result), nil
 }
 
 // executeWebSearch 执行联网搜索
