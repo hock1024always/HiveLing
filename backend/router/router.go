@@ -112,6 +112,8 @@ func Router() *gin.Engine {
 		dialog.GET("/sessions", dialogCtrl.ListSessions)
 		// 知识库搜索
 		dialog.POST("/search", dialogCtrl.SearchKnowledge)
+		// Agent 统计指标
+		dialog.GET("/agent/stats", dialogCtrl.GetAgentStats)
 	}
 
 	// 前端静态文件服务

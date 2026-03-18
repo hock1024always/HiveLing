@@ -14,8 +14,10 @@ import (
 
 // Message 消息结构
 type Message struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
+	Role       string `json:"role"`
+	Content    string `json:"content"`
+	ToolCalls  string `json:"tool_calls,omitempty"`  // 工具调用 JSON
+	ToolCallID string `json:"tool_call_id,omitempty"` // 工具调用 ID（用于工具结果消息）
 }
 
 // ToolCall 工具调用

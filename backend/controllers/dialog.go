@@ -4,31 +4,36 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hock1024always/GoEdu/models"
+	"github.com/hock1024always/GoEdu/services/agent"
 	"github.com/hock1024always/GoEdu/services/llm"
-	"github.com/hock1024always/GoEdu/services/mcp"
 	"github.com/hock1024always/GoEdu/services/memory"
 	"github.com/hock1024always/GoEdu/services/rag"
 )
 
 // DialogController 对话控制器
 type DialogController struct {
-	llmClient    *llm.Client
-	sessionMgr   *memory.SessionManager
-	toolExecutor *mcp.ToolExecutor
-	retriever    *rag.Retriever
+	llmClient  *llm.Client
+	sessionMgr *memory.SessionManager
+	retriever  *rag.Retriever
+	dialogAgent *agent.DialogAgent
+	metrics    *agent.MetricsCallback
 }
 
 // NewDialogController 创建对话控制器
 func NewDialogController() *DialogController {
+	metrics := &agent.MetricsCallback{}
+	dialogAgent := agent.NewDialogAgent(nil).
+		WithCallbacks(&agent.LogCallback{}, metrics)
+
 	return &DialogController{
-		llmClient:    llm.NewClient(),
-		sessionMgr:   memory.NewSessionManager(),
-		toolExecutor: mcp.NewToolExecutor(),
-		retriever:    rag.NewRetriever(),
+		llmClient:   llm.NewClient(),
+		sessionMgr:  memory.NewSessionManager(),
+		retriever:   rag.NewRetriever(),
+		dialogAgent: dialogAgent,
+		metrics:     metrics,
 	}
 }
 
@@ -94,62 +99,45 @@ func (d *DialogController) Chat(c *gin.Context) {
 		{Role: "system", Content: systemPrompt},
 	}, context...)
 
+	// 添加当前用户消息
+	messages = append(messages, llm.Message{Role: "user", Content: req.Message})
+
 	// 获取工具列表
 	tools := llm.BuildTools(session.Mode)
 
 	// 发送状态
 	d.sendSSE(c, SSEEvent{Type: "status", Content: "正在思考..."})
 
-	// 流式调用 LLM
-	var fullContent strings.Builder
-	var toolCalls []llm.ToolCall
-
-	_, err = d.llmClient.StreamChat(messages, tools, func(chunk *llm.StreamChunk) error {
-		if len(chunk.Choices) > 0 {
-			delta := chunk.Choices[0].Delta
-
-			// 处理文本内容
-			if delta.Content != "" {
-				fullContent.WriteString(delta.Content)
-				d.sendSSE(c, SSEEvent{
-					Type:    "text",
-					Content: delta.Content,
-				})
-			}
-
-			// 处理工具调用
-			if len(delta.ToolCalls) > 0 {
-				for _, tc := range delta.ToolCalls {
-					// 发送工具调用事件
-					d.sendSSE(c, SSEEvent{
-						Type:      "tool_call",
-						Tool:      tc.Function.Name,
-						Arguments: tc.Function.Arguments,
-					})
-
-					// 执行工具
-					d.sendSSE(c, SSEEvent{
-						Type:    "status",
-						Content: fmt.Sprintf("正在调用 %s...", tc.Function.Name),
-					})
-
-					result, err := d.toolExecutor.ExecuteTool(tc.Function.Name, tc.Function.Arguments)
-					if err != nil {
-						result = fmt.Sprintf(`{"error": "%s"}`, err.Error())
-					}
-
-					// 发送工具结果
-					d.sendSSE(c, SSEEvent{
-						Type:   "tool_result",
-						Tool:   tc.Function.Name,
-						Result: result,
-					})
-
-					toolCalls = append(toolCalls, tc)
-				}
-			}
+	// 使用 Agent 执行（自动处理工具调用循环）
+	result, err := d.dialogAgent.Run(c.Request.Context(), messages, tools, func(event *agent.AgentEvent) {
+		switch event.Type {
+		case agent.EventTypeText:
+			d.sendSSE(c, SSEEvent{
+				Type:    "text",
+				Content: event.Content,
+			})
+		case agent.EventTypeToolCall:
+			d.sendSSE(c, SSEEvent{
+				Type:      "tool_call",
+				Tool:      event.ToolName,
+				Arguments: event.Arguments,
+			})
+			d.sendSSE(c, SSEEvent{
+				Type:    "status",
+				Content: fmt.Sprintf("正在调用 %s...", event.ToolName),
+			})
+		case agent.EventTypeToolResult:
+			d.sendSSE(c, SSEEvent{
+				Type:   "tool_result",
+				Tool:   event.ToolName,
+				Result: event.Result,
+			})
+		case agent.EventTypeStatus:
+			d.sendSSE(c, SSEEvent{
+				Type:    "status",
+				Content: event.Content,
+			})
 		}
-		return nil
 	})
 
 	if err != nil {
@@ -157,18 +145,8 @@ func (d *DialogController) Chat(c *gin.Context) {
 		return
 	}
 
-	// 如果有工具调用，需要再次调用 LLM 生成最终回复
-	if len(toolCalls) > 0 {
-		// 添加助手消息（包含工具调用）
-		toolCallsJSON := memory.GetToolCallsJSON(toolCalls)
-		d.sessionMgr.AddMessage(session.ID, "assistant", "", toolCallsJSON, "")
-
-		// 重新构建上下文，包含工具结果
-		// TODO: 实现完整的工具调用循环
-	}
-
 	// 保存助手回复
-	d.sessionMgr.AddMessage(session.ID, "assistant", fullContent.String(), "", "")
+	d.sessionMgr.AddMessage(session.ID, "assistant", result.Content, "", "")
 
 	// 发送完成事件
 	d.sendSSE(c, SSEEvent{
@@ -305,5 +283,15 @@ func (d *DialogController) SearchKnowledge(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"results": results,
+	})
+}
+
+// GetAgentStats 获取 Agent 统计指标
+// GET /api/dialog/agent/stats
+func (d *DialogController) GetAgentStats(c *gin.Context) {
+	stats := d.metrics.GetStats()
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    stats,
 	})
 }
