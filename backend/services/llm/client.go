@@ -33,12 +33,13 @@ type FunctionCall struct {
 }
 
 // Tool 工具定义
-type Tool struct {
+// 为了保持兼容性，使用别名指向 tools 包的类型
+type Tool = struct {
 	Type     string      `json:"type"`
 	Function ToolFunction `json:"function"`
 }
 
-type ToolFunction struct {
+type ToolFunction = struct {
 	Name        string                 `json:"name"`
 	Description string                 `json:"description"`
 	Parameters  map[string]interface{} `json:"parameters"`

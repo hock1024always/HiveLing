@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/hock1024always/GoEdu/config"
 	"github.com/hock1024always/GoEdu/controllers"
 	"github.com/hock1024always/GoEdu/pkg/cors"
 	"github.com/hock1024always/GoEdu/pkg/logger"
@@ -20,6 +21,19 @@ func Router() *gin.Engine {
 	r.Use(logger.Recover)
 	// 设置最大上传文件大小为10MB
 	r.MaxMultipartMemory = 10 << 20
+
+	// 健康检查接口
+	r.GET("/api/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok"})
+	})
+
+	// 向前端暴露服务配置（host:port）
+	r.GET("/api/config", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"host": config.AppConfig.Server.Host,
+			"port": config.AppConfig.Server.Port,
+		})
+	})
 
 	////sessions中间件
 	//store, _ := sessions_redis.NewStore(10, "tcp", config.RedisAddress, "", []byte("secret"))

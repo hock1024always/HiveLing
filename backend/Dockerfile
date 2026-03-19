@@ -1,36 +1,60 @@
-# 使用官方的 Go 语言镜像作为基础镜像
-# 这里使用 Go 1.23.0 版本的 Alpine Linux 镜像
+# 慧备灵师 - Dockerfile
+# 构建阶段
 FROM golang:1.23.0-alpine AS builder
 
-# 设置工作目录为 /app
-# 所有后续操作都会在这个目录下进行
+# 设置工作目录
 WORKDIR /app
 
-# 将当前项目目录的所有文件拷贝到容器的 /app 目录中
+# 安装构建依赖
+RUN apk add --no-cache git
+
+# 设置 Go 模块代理（中国镜像加速）
+RUN go env -w GOPROXY=https://goproxy.cn,direct
+
+# 复制依赖文件
+COPY go.mod go.sum ./
+
+# 下载依赖
+RUN go mod download
+
+# 复制源代码
 COPY . .
 
-# 设置 Go 模块代理为 https://goproxy.cn（在中国加速模块下载），并下载项目的依赖
-RUN go env -w GOPROXY=https://goproxy.cn,direct && go mod download
+# 编译应用
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o goedu-server main.go
 
-# 编译 Go 项目，生成可执行文件 simple-web-app
-RUN go build -o GoEdu
-
-# 使用一个更小的基础镜像（Alpine）来运行应用程序
-# Alpine 是一个极简的 Linux 发行版，适合部署阶段
+# 运行阶段
 FROM alpine:latest
 
-# 安装 tzdata 包，确保支持时区的配置
-RUN apk add --no-cache tzdata
+# 安装运行时依赖
+RUN apk --no-cache add ca-certificates wget tzdata
 
-# 设置工作目录为 /app
+# 设置时区
+ENV TZ=Asia/Shanghai
+
+# 创建非 root 用户
+RUN addgroup -g 1000 -S appgroup && \
+    adduser -u 1000 -S appuser -G appgroup
+
+# 设置工作目录
 WORKDIR /app
 
-# 从编译阶段的镜像中拷贝编译后的二进制文件到运行镜像中
-COPY --from=builder /app/GoEdu /app/GoEdu
+# 从构建阶段复制二进制文件
+COPY --from=builder /app/goedu-server .
 
-# 暴露容器的 8080 端口，用于外部访问
-EXPOSE 9090
+# 创建必要的目录
+RUN mkdir -p /app/logs /app/uploads /app/frontend /app/config && \
+    chown -R appuser:appgroup /app
 
-# 设置容器启动时运行的命令
-# 这里是运行编译好的可执行文件 simple-web-app
-CMD ["/app/GoEdu"]
+# 切换到非 root 用户
+USER appuser
+
+# 暴露端口
+EXPOSE 8080
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD wget --quiet --tries=1 --spider http://localhost:8080/api/health || exit 1
+
+# 启动命令
+CMD ["./goedu-server"]

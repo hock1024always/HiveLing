@@ -1,0 +1,40 @@
+server:
+  port: 8080
+  mode: release
+  frontend_path: ./frontend
+
+database:
+  host: localhost
+  port: 3306
+  username: root
+  password: ""
+  database: goedu
+  charset: utf8mb4
+
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 0
+
+milvus:
+  enabled: false
+  host: localhost
+  port: 19530
+  collection: goedu_knowledge
+
+deepseek:
+  api_key: "your_deepseek_api_key"
+  base_url: "https://api.deepseek.com/v1"
+  model: "deepseek-chat"
+
+serper:
+  api_key: "your_serper_api_key"
+  base_url: "https://google.serper.dev"
+
+log:
+  level: info
+  path: ./logs
+  max_size: 100
+  max_age: 30
+  max_backups: 10

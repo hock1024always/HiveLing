@@ -28,7 +28,7 @@ type LessonWorkflow struct {
 	Subject     string         `gorm:"type:varchar(50);default:'历史'" json:"subject"`
 	Grade       string         `gorm:"type:varchar(50)" json:"grade"`
 	Duration    int            `gorm:"default:45" json:"duration"`           // 课时（分钟）
-	OutlineJSON string         `gorm:"type:json" json:"outline_json"`       // 大纲 JSON
+	OutlineJSON string         `gorm:"type:longtext" json:"outline_json"`   // 大纲 JSON
 	LessonPlan  string         `gorm:"type:longtext" json:"lesson_plan"`    // 教案 Markdown
 	PPTPath     string         `gorm:"type:varchar(500)" json:"ppt_path"`   // PPT 文件路径
 	ErrorMsg    string         `gorm:"type:text" json:"error_msg,omitempty"`

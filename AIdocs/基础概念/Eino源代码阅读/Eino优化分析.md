@@ -1,6 +1,6 @@
 # Eino 框架优化分析
 
-> **更新状态**：P0 优化已实施完成（2026-03-18）
+> **更新状态**：P0 优化已实施完成（2026-03-18），P1 优化已实施完成（2026-03-18）
 
 ## 项目现状分析
 
@@ -429,9 +429,90 @@ GET /api/dialog/agent/stats  # 获取 Agent 统计指标
 | 可观测性 | ❌ 无 | ✅ 日志+指标+追踪 |
 | 代码结构 | 分散 | 集中在 Agent 服务 |
 
+### P1 优化已完成 ✅
+
+**实施时间**：2026-03-18
+
+**实施目标**：标准化 Tool 接口（借鉴 Eino ToolsNode 设计）
+
+**新增文件**：
+
+| 文件 | 说明 |
+|------|------|
+| `services/tools/tool.go` | 标准化 Tool 接口定义（Tool/ToolInfo/ToolRegistry） |
+| `services/tools/search_knowledge.go` | SearchKnowledgeTool 实现 |
+| `services/tools/query_graph.go` | QueryGraphTool 实现 |
+| `services/tools/get_timeline.go` | GetTimelineTool 实现 |
+| `services/tools/web_search.go` | WebSearchTool 实现 |
+
+**修改文件**：
+
+| 文件 | 修改内容 |
+|------|----------|
+| `services/mcp/tools.go` | 重构为基于 ToolRegistry 的实现 |
+| `controllers/dialog.go` | 使用 ToolExecutor.GetToolsByMode() 获取工具 |
+| `services/llm/client.go` | Tool/ToolFunction 改为类型别名 |
+
+**核心改进**：
+
+1. **标准化 Tool 接口**
+   ```go
+   type Tool interface {
+       Info() *ToolInfo                    // 自描述：名称、描述、参数
+       Run(ctx context.Context, input string) (string, error)  // 自执行
+   }
+   ```
+
+2. **工具自描述**
+   ```go
+   func (t *SearchKnowledgeTool) Info() *ToolInfo {
+       return &ToolInfo{
+           Name:        "search_knowledge",
+           Description: "搜索春秋战国历史知识库...",
+           Parameters: map[string]interface{}{
+               "type": "object",
+               "properties": map[string]interface{}{
+                   "query": map[string]interface{}{
+                       "type":        "string",
+                       "description": "搜索关键词或问题",
+                   },
+                   // ...
+               },
+               "required": []string{"query"},
+           },
+       }
+   }
+   ```
+
+3. **工具注册表（ToolRegistry）**
+   ```go
+   type ToolRegistry struct {
+       tools map[string]Tool
+   }
+
+   func (r *ToolRegistry) Register(tool Tool)
+   func (r *ToolRegistry) Get(name string) (Tool, bool)
+   func (r *ToolRegistry) Execute(ctx context.Context, name string, args json.RawMessage) (string, error)
+   func (r *ToolRegistry) ToLLMTools() []LLMTool
+   ```
+
+4. **新增工具成本大幅降低**
+   - 之前：修改 `BuildTools()` + 修改 `ExecuteTool()` 两处
+   - 现在：实现 `Tool` 接口 → 注册到 Registry 即可
+
+**优化效果**：
+
+| 指标 | 优化前 | 优化后 |
+|------|--------|--------|
+| 工具接口标准化 | ❌ 定义/执行分离 | ✅ 统一 Tool 接口 |
+| 工具自描述 | ❌ 无 | ✅ Info() 方法 |
+| 新增工具成本 | 改 2 处文件 | 实现接口即可 |
+| 工具可插拔性 | 低 | 高 |
+| 与 Eino 兼容性 | 无 | 接口设计一致 |
+
 ### 后续优化建议
 
 | 优先级 | 方案 | 状态 |
 |--------|------|------|
-| P1 | 可观测性增强 | 部分完成（已实现回调机制） |
+| P1 | 可观测性增强 | ✅ 已完成（已实现回调机制） |
 | P2 | 工作流编排优化 | 待实施 |

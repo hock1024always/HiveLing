@@ -1,0 +1,155 @@
+name: outline_gen
+version: "1.0"
+description: 生成课程大纲的提示词模板
+variables:
+  - name: topic
+    type: string
+    required: true
+    description: 课程主题
+  - name: grade
+    type: string
+    required: true
+    description: 年级（如：初一、初二、高一）
+  - name: duration
+    type: string
+    required: false
+    default: "45分钟"
+    description: 课程时长
+  - name: knowledge_points
+    type: array
+    required: false
+    description: 知识点列表
+  - name: teaching_objectives
+    type: array
+    required: false
+    description: 教学目标
+  - name: history_context
+    type: string
+    required: false
+    description: 历史背景信息（来自RAG检索）
+  - name: student_level
+    type: string
+    required: false
+    default: "中等"
+    description: 学生水平（基础/中等/优秀）
+
+system: |
+  {{import "system/historian.txt"}}
+
+  你是一位专业的历史课程设计师，擅长根据教学要求设计结构清晰、内容充实的课程大纲。
+
+user: |
+  请为以下主题设计一份详细的课程大纲：
+
+  ## 基本信息
+  - **主题**：{{.topic}}
+  - **年级**：{{.grade}}
+  - **时长**：{{.duration}}
+  - **学生水平**：{{.student_level}}
+
+  {{if .knowledge_points}}
+  ## 需覆盖的知识点
+  {{range .knowledge_points}}
+  - {{.}}
+  {{end}}
+  {{end}}
+
+  {{if .teaching_objectives}}
+  ## 教学目标
+  {{range .teaching_objectives}}
+  - {{.}}
+  {{end}}
+  {{end}}
+
+  {{if .history_context}}
+  ## 历史背景参考
+  {{.history_context}}
+  {{end}}
+
+  ## 输出要求
+  请按以下JSON格式输出课程大纲：
+
+  ```json
+  {
+    "title": "课程标题",
+    "overview": "课程概述（100字以内）",
+    "objectives": ["教学目标1", "教学目标2", "教学目标3"],
+    "key_points": ["重点1", "重点2"],
+    "difficult_points": ["难点1", "难点2"],
+    "teaching_process": [
+      {
+        "stage": "导入",
+        "duration": "5分钟",
+        "content": "导入内容描述",
+        "method": "教学方法"
+      },
+      {
+        "stage": "新课讲授",
+        "duration": "25分钟",
+        "content": "讲授内容",
+        "method": "讲授方法"
+      },
+      {
+        "stage": "巩固练习",
+        "duration": "10分钟",
+        "content": "练习内容",
+        "method": "练习方式"
+      },
+      {
+        "stage": "小结作业",
+        "duration": "5分钟",
+        "content": "总结内容",
+        "method": "总结方式"
+      }
+    ],
+    "board_design": "板书设计要点",
+    "teaching_resources": ["资源1", "资源2"],
+    "reflection_points": ["反思点1", "反思点2"]
+  }
+  ```
+
+  注意：
+  1. 总时长必须严格控制在{{.duration}}以内
+  2. 内容要符合{{.grade}}学生的认知水平
+  3. 结合历史学科核心素养（唯物史观、时空观念、史料实证、历史解释、家国情怀）
+  4. 确保知识点的准确性和历史事实的严谨性
+
+examples:
+  - input:
+      topic: "春秋争霸"
+      grade: "初一"
+      duration: "45分钟"
+      student_level: "中等"
+    output: |
+      {
+        "title": "春秋争霸",
+        "overview": "本课讲述春秋时期诸侯争霸的历史，分析齐桓公、晋文公等霸主兴起的背景和影响...",
+        "objectives": ["了解春秋时期的时代背景", "掌握春秋五霸的主要事迹", "理解争霸战争的双重影响"],
+        ...
+      }
+
+output_schema:
+  type: object
+  required: ["title", "overview", "objectives", "teaching_process"]
+  properties:
+    title:
+      type: string
+    overview:
+      type: string
+    objectives:
+      type: array
+      items:
+        type: string
+    teaching_process:
+      type: array
+      items:
+        type: object
+        properties:
+          stage:
+            type: string
+          duration:
+            type: string
+          content:
+            type: string
+          method:
+            type: string

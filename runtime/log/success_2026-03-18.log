@@ -1,0 +1,17 @@
+Warning: Redis connection failed: dial tcp [::1]:6379: connect: connection refused, caching disabled
+Warning: Redis connection failed: dial tcp [::1]:6379: connect: connection refused, caching disabled
+Warning: Redis connection failed: dial tcp [::1]:6379: connect: connection refused, caching disabled
+Warning: Redis connection failed: dial tcp [::1]:6379: connect: connection refused, caching disabled
+Warning: Redis connection failed: dial tcp [::1]:6379: connect: connection refused, caching disabled
+Warning: Redis connection failed: dial tcp [::1]:6379: connect: connection refused, caching disabled
+Warning: Redis connection failed: dial tcp [::1]:6379: connect: connection refused, caching disabled
+Warning: Redis connection failed: dial tcp [::1]:6379: connect: connection refused, caching disabled
+Warning: Redis connection failed: dial tcp [::1]:6379: connect: connection refused, caching disabled
+Warning: Redis connection failed: dial tcp [::1]:6379: connect: connection refused, caching disabled
+Warning: Redis connection failed: dial tcp [::1]:6379: connect: connection refused, caching disabled
+Warning: Redis connection failed: dial tcp [::1]:6379: connect: connection refused, caching disabled
+Warning: Redis connection failed: dial tcp [::1]:6379: connect: connection refused, caching disabled
+Warning: Redis connection failed: dial tcp [::1]:6379: connect: connection refused, caching disabled
+Wed, 18 Mar 2026 23:44:45 CST - [172.20.19.106] "GET /api/health HTTP/1.1 200 163.488µs "curl/7.29.0" "
+Wed, 18 Mar 2026 23:53:53 CST - [192.168.23.4] "GET /app/index.html HTTP/1.1 404 432.602µs "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0" "
+Wed, 18 Mar 2026 23:53:57 CST - [192.168.23.4] "GET /app/index.html HTTP/1.1 404 26.385µs "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0" "

@@ -14,8 +14,8 @@ type Session struct {
 	Mode         string         `gorm:"type:varchar(20);default:'auto'" json:"mode"` // local, online, auto
 	Messages     []Message      `gorm:"foreignKey:SessionID" json:"messages"`
 	Summary      string         `gorm:"type:text" json:"summary"`              // 会话摘要
-	Topics       string         `gorm:"type:json" json:"topics"`               // 话题标签 JSON
-	KeyEntities  string         `gorm:"type:json" json:"key_entities"`         // 关键实体 JSON
+	Topics       string         `gorm:"type:longtext" json:"topics"`           // 话题标签 JSON
+	KeyEntities  string         `gorm:"type:longtext" json:"key_entities"`     // 关键实体 JSON
 	MessageCount int            `gorm:"default:0" json:"message_count"`        // 消息计数
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
@@ -30,9 +30,9 @@ type Message struct {
 	Content      string    `gorm:"type:text" json:"content"`
 	Tag          string    `gorm:"type:varchar(50)" json:"tag"`                     // 消息标签
 	Importance   int       `gorm:"default:5" json:"importance"`                     // 重要性 1-10
-	Topics       string    `gorm:"type:json" json:"topics,omitempty"`               // 涉及的话题 JSON
-	Entities     string    `gorm:"type:json" json:"entities,omitempty"`             // 提及的实体 JSON
-	ToolCalls    string    `gorm:"type:json" json:"tool_calls,omitempty"`           // JSON 存储工具调用
+	Topics       string    `gorm:"type:longtext" json:"topics,omitempty"`           // 涉及的话题 JSON
+	Entities     string    `gorm:"type:longtext" json:"entities,omitempty"`         // 提及的实体 JSON
+	ToolCalls    string    `gorm:"type:longtext" json:"tool_calls,omitempty"`       // JSON 存储工具调用
 	ToolResult   string    `gorm:"type:text" json:"tool_result,omitempty"`          // 工具返回结果
 	IsSummarized bool      `gorm:"default:false" json:"is_summarized"`              // 是否已被摘要
 	CreatedAt    time.Time `json:"created_at"`

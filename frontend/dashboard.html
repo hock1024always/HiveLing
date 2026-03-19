@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>系统监控 - 慧备灵师</title>
+<style>
+:root { --primary: #8B0000; --primary-light: #a52a2a; --gold: #FFD700; --bg: #f5f5f0; --border: #e2e8f0; --success: #16a34a; --warning: #d97706; --danger: #dc2626; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; min-height: 100vh; background: var(--bg); }
+
+/* 顶栏 */
+.topbar { background: #1a1a2e; color: #fff; padding: 0.8rem 2rem; display: flex; align-items: center; gap: 1rem; }
+.topbar a { color: #a0aec0; text-decoration: none; font-size: 0.9rem; }
+.topbar a:hover { color: var(--gold); }
+.topbar h1 { font-size: 1.2rem; }
+
+/* 主容器 */
+.container { max-width: 1400px; margin: 1.5rem auto; padding: 0 1.5rem; }
+
+/* 统计卡片 */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.stat-card { background: #fff; border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border); position: relative; overflow: hidden; }
+.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+.stat-card.primary::before { background: var(--primary); }
+.stat-card.success::before { background: var(--success); }
+.stat-card.warning::before { background: var(--warning); }
+.stat-card.danger::before { background: var(--danger); }
+.stat-card h4 { font-size: 0.9rem; color: #666; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+.stat-card .value { font-size: 2rem; font-weight: 600; color: #333; }
+.stat-card .trend { font-size: 0.85rem; margin-top: 0.5rem; display: flex; align-items: center; gap: 0.3rem; }
+.stat-card .trend.up { color: var(--success); }
+.stat-card .trend.down { color: var(--danger); }
+
+/* 面板 */
+.panel { background: #fff; border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 1.5rem; }
+.panel-title { font-size: 1.1rem; font-weight: 600; color: #333; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; justify-content: space-between; }
+
+/* 图表容器 */
+.chart-container { height: 300px; background: #fafaf5; border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #999; position: relative; }
+
+/* 表格 */
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.data-table th, .data-table td { padding: 0.8rem; text-align: left; border-bottom: 1px solid var(--border); }
+.data-table th { background: #fafaf5; font-weight: 600; color: #666; font-size: 0.85rem; }
+.data-table tr:hover { background: #fafaf5; }
+.data-table .status { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500; }
+.data-table .status.success { background: #dcfce7; color: #166534; }
+.data-table .status.warning { background: #fef3c7; color: #92400e; }
+.data-table .status.error { background: #fef2f2; color: #dc2626; }
+
+/* 两栏布局 */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+@media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+/* 日志 */
+.log-container { background: #1a1a2e; color: #a0aec0; border-radius: 8px; padding: 1rem; font-family: "Fira Code", monospace; font-size: 0.85rem; max-height: 300px; overflow-y: auto; }
+.log-entry { margin-bottom: 0.3rem; line-height: 1.5; }
+.log-entry .time { color: #6b7280; }
+.log-entry .level { font-weight: 600; margin-right: 0.5rem; }
+.log-entry .level.info { color: #60a5fa; }
+.log-entry .level.warn { color: #fbbf24; }
+.log-entry .level.error { color: #f87171; }
+.log-entry .msg { color: #e5e7eb; }
+
+/* Agent 统计 */
+.agent-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center; }
+.agent-stat { padding: 1rem; background: #fafaf5; border-radius: 8px; }
+.agent-stat .label { font-size: 0.8rem; color: #666; margin-bottom: 0.3rem; }
+.agent-stat .num { font-size: 1.5rem; font-weight: 600; color: var(--primary); }
+
+/* 刷新按钮 */
+.refresh-btn { padding: 0.4rem 0.8rem; background: #f0f0f0; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 0.3rem; }
+.refresh-btn:hover { background: #e0e0e0; }
+.refresh-btn.spinning .icon { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* 系统状态 */
+.system-status { display: flex; gap: 1rem; flex-wrap: wrap; }
+.status-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; background: #fafaf5; border-radius: 8px; font-size: 0.9rem; }
+.status-item .dot { width: 8px; height: 8px; border-radius: 50%; }
+.status-item .dot.online { background: var(--success); }
+.status-item .dot.offline { background: var(--danger); }
+.status-item .dot.warning { background: var(--warning); }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+    <a href="index.html">&larr; 返回首页</a>
+    <h1>系统监控</h1>
+</div>
+
+<div class="container">
+
+<!-- 系统状态 -->
+<div class="panel">
+    <div class="panel-title">
+        <span>🖥️ 系统状态</span>
+        <button class="refresh-btn" onclick="refreshAll()">
+            <span class="icon">🔄</span> 刷新
+        </button>
+    </div>
+    <div class="system-status" id="systemStatus">
+        <div class="status-item">
+            <span class="dot online"></span>
+            <span>API 服务: 正常</span>
+        </div>
+        <div class="status-item">
+            <span class="dot online"></span>
+            <span>MySQL: 正常</span>
+        </div>
+        <div class="status-item">
+            <span class="dot online" id="milvusStatus"></span>
+            <span>Milvus: <span id="milvusText">检查中...</span></span>
+        </div>
+        <div class="status-item">
+            <span class="dot online" id="redisStatus"></span>
+            <span>Redis: <span id="redisText">检查中...</span></span>
+        </div>
+    </div>
+</div>
+
+<!-- 关键指标 -->
+<div class="stats-grid">
+    <div class="stat-card primary">
+        <h4>📊 今日对话次数</h4>
+        <div class="value" id="todayDialogs">-</div>
+        <div class="trend up">↑ 12% 较昨日</div>
+    </div>
+    <div class="stat-card success">
+        <h4>📚 知识库条目</h4>
+        <div class="value" id="knowledgeCount">-</div>
+        <div class="trend up">↑ 5 新增</div>
+    </div>
+    <div class="stat-card warning">
+        <h4>⏱️ 平均响应时间</h4>
+        <div class="value" id="avgResponseTime">-</div>
+        <div class="trend down">↓ 8% 优化</div>
+    </div>
+    <div class="stat-card danger">
+        <h4>🔧 工具调用次数</h4>
+        <div class="value" id="toolCalls">-</div>
+        <div class="trend up">↑ 23% 较昨日</div>
+    </div>
+</div>
+
+<!-- Agent 统计 -->
+<div class="panel">
+    <div class="panel-title">
+        <span>🤖 Agent 性能统计</span>
+        <button class="refresh-btn" onclick="loadAgentStats()">
+            <span class="icon">🔄</span> 刷新
+        </button>
+    </div>
+    <div class="agent-stats" id="agentStats">
+        <div class="agent-stat">
+            <div class="label">总请求数</div>
+            <div class="num" id="totalRequests">-</div>
+        </div>
+        <div class="agent-stat">
+            <div class="label">平均耗时</div>
+            <div class="num" id="avgDuration">-</div>
+        </div>
+        <div class="agent-stat">
+            <div class="label">工具调用</div>
+            <div class="num" id="totalToolCalls">-</div>
+        </div>
+        <div class="agent-stat">
+            <div class="label">错误次数</div>
+            <div class="num" id="totalErrors">-</div>
+        </div>
+        <div class="agent-stat">
+            <div class="label">成功率</div>
+            <div class="num" id="successRate">-</div>
+        </div>
+        <div class="agent-stat">
+            <div class="label">缓存命中</div>
+            <div class="num" id="cacheHitRate">-</div>
+        </div>
+    </div>
+</div>
+
+<div class="two-col">
+    <!-- 对话趋势 -->
+    <div class="panel">
+        <div class="panel-title">📈 对话趋势（近7天）</div>
+        <div class="chart-container" id="dialogChart">
+            <div>对话量趋势图（需接入图表库如 ECharts）</div>
+        </div>
+    </div>
+
+    <!-- 工具使用分布 -->
+    <div class="panel">
+        <div class="panel-title">🔧 工具使用分布</div>
+        <div class="chart-container" id="toolChart">
+            <div>工具使用饼图（需接入图表库如 ECharts）</div>
+        </div>
+    </div>
+</div>
+
+<!-- 最近对话 -->
+<div class="panel">
+    <div class="panel-title">💬 最近对话记录</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>时间</th>
+                <th>会话ID</th>
+                <th>用户问题</th>
+                <th>工具调用</th>
+                <th>耗时</th>
+                <th>状态</th>
+            </tr>
+        </thead>
+        <tbody id="recentDialogs">
+            <tr><td colspan="6" style="text-align:center;color:#999;">加载中...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- 系统日志 -->
+<div class="panel">
+    <div class="panel-title">
+        <span>📝 系统日志</span>
+        <button class="refresh-btn" onclick="loadLogs()">
+            <span class="icon">🔄</span> 刷新
+        </button>
+    </div>
+    <div class="log-container" id="logContainer">
+        <div class="log-entry">
+            <span class="time">2026-03-18 10:30:15</span>
+            <span class="level info">[INFO]</span>
+            <span class="msg">系统启动成功</span>
+        </div>
+    </div>
+</div>
+
+</div><!-- /container -->
+
+<script src="config.js"></script>
+<script>
+
+// 初始化
+refreshAll();
+
+// 刷新所有数据
+async function refreshAll() {
+    document.querySelector('.refresh-btn').classList.add('spinning');
+
+    await Promise.all([
+        checkSystemStatus(),
+        loadAgentStats(),
+        loadRecentDialogs(),
+        loadLogs()
+    ]);
+
+    document.querySelector('.refresh-btn').classList.remove('spinning');
+}
+
+// 检查系统状态
+async function checkSystemStatus() {
+    try {
+        // 检查 Milvus
+        const milvusRes = await fetch(`${API_BASE}/api/health/milvus`);
+        const milvusData = await milvusRes.json();
+        const milvusOnline = milvusData.status === 'ok';
+        document.getElementById('milvusStatus').className = 'dot ' + (milvusOnline ? 'online' : 'offline');
+        document.getElementById('milvusText').textContent = milvusOnline ? '正常' : '异常';
+
+        // 检查 Redis
+        const redisRes = await fetch(`${API_BASE}/api/health/redis`);
+        const redisData = await redisRes.json();
+        const redisOnline = redisData.status === 'ok';
+        document.getElementById('redisStatus').className = 'dot ' + (redisOnline ? 'online' : 'offline');
+        document.getElementById('redisText').textContent = redisOnline ? '正常' : '异常';
+    } catch(e) {
+        console.error('检查系统状态失败:', e);
+    }
+}
+
+// 加载 Agent 统计
+async function loadAgentStats() {
+    try {
+        const res = await fetch(`${API_BASE}/api/dialog/agent/stats`);
+        const data = await res.json();
+
+        if (data.success && data.data) {
+            const stats = data.data;
+            document.getElementById('totalRequests').textContent = stats.total_requests || 0;
+            document.getElementById('avgDuration').textContent = formatDuration(stats.avg_duration);
+            document.getElementById('totalToolCalls').textContent = stats.total_tool_calls || 0;
+            document.getElementById('totalErrors').textContent = stats.total_errors || 0;
+
+            // 计算成功率
+            const successRate = stats.total_requests > 0
+                ? ((stats.total_requests - stats.total_errors) / stats.total_requests * 100).toFixed(1) + '%'
+                : '100%';
+            document.getElementById('successRate').textContent = successRate;
+
+            // 更新顶部卡片
+            document.getElementById('todayDialogs').textContent = stats.total_requests || 0;
+            document.getElementById('toolCalls').textContent = stats.total_tool_calls || 0;
+            document.getElementById('avgResponseTime').textContent = formatDuration(stats.avg_duration);
+        }
+
+        // 加载知识库数量
+        const knowledgeRes = await fetch(`${API_BASE}/api/knowledge/stats`);
+        const knowledgeData = await knowledgeRes.json();
+        document.getElementById('knowledgeCount').textContent = knowledgeData.total || 0;
+
+        // 加载缓存命中率
+        const cacheRes = await fetch(`${API_BASE}/api/rag/cache-stats`);
+        const cacheData = await cacheRes.json();
+        const hitRate = cacheData.hit_rate ? (cacheData.hit_rate * 100).toFixed(1) + '%' : '-';
+        document.getElementById('cacheHitRate').textContent = hitRate;
+    } catch(e) {
+        console.error('加载统计失败:', e);
+    }
+}
+
+// 加载最近对话
+async function loadRecentDialogs() {
+    try {
+        // 这里假设有一个获取最近对话的接口
+        const res = await fetch(`${API_BASE}/api/dialog/recent?limit=10`);
+        const data = await res.json();
+
+        const tbody = document.getElementById('recentDialogs');
+        if (!data.dialogs || data.dialogs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">暂无数据</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.dialogs.map(d => `
+            <tr>
+                <td>${new Date(d.created_at).toLocaleString()}</td>
+                <td>${d.session_id?.slice(0, 8) || '-'}</td>
+                <td>${esc(d.query?.slice(0, 50) || '-')}...</td>
+                <td>${d.tool_calls || 0}</td>
+                <td>${formatDuration(d.duration)}</td>
+                <td><span class="status ${d.status || 'success'}">${d.status === 'error' ? '失败' : '成功'}</span></td>
+            </tr>
+        `).join('');
+    } catch(e) {
+        document.getElementById('recentDialogs').innerHTML = `<tr><td colspan="6" style="text-align:center;color:#999;">加载失败: ${e.message}</td></tr>`;
+    }
+}
+
+// 加载日志
+async function loadLogs() {
+    try {
+        const res = await fetch(`${API_BASE}/api/logs/recent?limit=50`);
+        const data = await res.json();
+
+        const container = document.getElementById('logContainer');
+        if (!data.logs || data.logs.length === 0) {
+            container.innerHTML = '<div class="log-entry"><span class="msg">暂无日志</span></div>';
+            return;
+        }
+
+        container.innerHTML = data.logs.map(log => `
+            <div class="log-entry">
+                <span class="time">${formatTime(log.time)}</span>
+                <span class="level ${log.level.toLowerCase()}">[${log.level}]</span>
+                <span class="msg">${esc(log.message)}</span>
+            </div>
+        `).join('');
+
+        // 滚动到底部
+        container.scrollTop = container.scrollHeight;
+    } catch(e) {
+        document.getElementById('logContainer').innerHTML = `<div class="log-entry"><span class="level error">[ERROR]</span><span class="msg">加载日志失败: ${e.message}</span></div>`;
+    }
+}
+
+// 格式化持续时间
+function formatDuration(duration) {
+    if (!duration) return '-';
+    if (typeof duration === 'string') {
+        // 解析类似 "3.3s" 的字符串
+        return duration;
+    }
+    // 如果是毫秒数
+    if (duration < 1000) return duration + 'ms';
+    if (duration < 60000) return (duration / 1000).toFixed(1) + 's';
+    return (duration / 60000).toFixed(1) + 'm';
+}
+
+// 格式化时间
+function formatTime(timestamp) {
+    if (!timestamp) return '-';
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString();
+}
+
+// 工具函数
+function esc(s) {
+    if (!s) return '';
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+// 定时刷新
+setInterval(() => {
+    loadAgentStats();
+}, 30000); // 每30秒刷新一次
+</script>
+
+</body>
+</html>

@@ -10,30 +10,34 @@ import (
 	"github.com/hock1024always/GoEdu/services/agent"
 	"github.com/hock1024always/GoEdu/services/llm"
 	"github.com/hock1024always/GoEdu/services/memory"
+	"github.com/hock1024always/GoEdu/services/mcp"
 	"github.com/hock1024always/GoEdu/services/rag"
 )
 
 // DialogController 对话控制器
 type DialogController struct {
-	llmClient  *llm.Client
-	sessionMgr *memory.SessionManager
-	retriever  *rag.Retriever
+	llmClient   *llm.Client
+	sessionMgr  *memory.SessionManager
+	retriever   *rag.Retriever
 	dialogAgent *agent.DialogAgent
-	metrics    *agent.MetricsCallback
+	toolExecutor *mcp.ToolExecutor
+	metrics     *agent.MetricsCallback
 }
 
 // NewDialogController 创建对话控制器
 func NewDialogController() *DialogController {
 	metrics := &agent.MetricsCallback{}
+	toolExecutor := mcp.NewToolExecutor()
 	dialogAgent := agent.NewDialogAgent(nil).
 		WithCallbacks(&agent.LogCallback{}, metrics)
 
 	return &DialogController{
-		llmClient:   llm.NewClient(),
-		sessionMgr:  memory.NewSessionManager(),
-		retriever:   rag.NewRetriever(),
-		dialogAgent: dialogAgent,
-		metrics:     metrics,
+		llmClient:    llm.NewClient(),
+		sessionMgr:   memory.NewSessionManager(),
+		retriever:    rag.NewRetriever(),
+		dialogAgent:  dialogAgent,
+		toolExecutor: toolExecutor,
+		metrics:      metrics,
 	}
 }
 
@@ -102,8 +106,8 @@ func (d *DialogController) Chat(c *gin.Context) {
 	// 添加当前用户消息
 	messages = append(messages, llm.Message{Role: "user", Content: req.Message})
 
-	// 获取工具列表
-	tools := llm.BuildTools(session.Mode)
+	// 获取工具列表（使用新的标准化工具注册表）
+	tools := d.toolExecutor.GetToolsByMode(session.Mode)
 
 	// 发送状态
 	d.sendSSE(c, SSEEvent{Type: "status", Content: "正在思考..."})

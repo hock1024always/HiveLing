@@ -12,7 +12,9 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/milvus-io/milvus-sdk-go/v2 v2.3.6
 	github.com/sirupsen/logrus v1.9.3
+	github.com/yanyiwu/gojieba v1.4.7
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
+	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.25.12
 )
@@ -66,5 +68,4 @@ require (
 	google.golang.org/grpc v1.48.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

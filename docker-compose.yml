@@ -1,0 +1,152 @@
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: goedu-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: goedu123456
+      MYSQL_DATABASE: goedu
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+      - ./backend/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+    networks:
+      - goedu-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: goedu-redis
+    restart: unless-stopped
+    volumes:
+      - ./data/redis:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - goedu-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Milvus 向量数据库（可选）
+  milvus-etcd:
+    image: quay.io/coreos/etcd:v3.5.5
+    container_name: goedu-milvus-etcd
+    restart: unless-stopped
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+    volumes:
+      - ./data/milvus/etcd:/etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    networks:
+      - goedu-network
+
+  milvus-minio:
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    container_name: goedu-milvus-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    volumes:
+      - ./data/milvus/minio:/minio_data
+    command: minio server /minio_data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - goedu-network
+
+  milvus-standalone:
+    image: milvusdb/milvus:v2.3.3
+    container_name: goedu-milvus
+    restart: unless-stopped
+    command: ["milvus", "run", "standalone"]
+    environment:
+      ETCD_ENDPOINTS: milvus-etcd:2379
+      MINIO_ADDRESS: milvus-minio:9000
+    volumes:
+      - ./data/milvus/milvus:/var/lib/milvus
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    networks:
+      - goedu-network
+    depends_on:
+      - milvus-etcd
+      - milvus-minio
+
+  # 后端服务
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: goedu-backend
+    restart: unless-stopped
+    environment:
+      - GO_ENV=production
+      - CONFIG_PATH=/app/config/config.yaml
+    volumes:
+      - ./backend/config:/app/config
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+      - ./frontend:/app/frontend
+    ports:
+      - "8080:8080"
+    networks:
+      - goedu-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx 反向代理（可选，用于生产环境）
+  nginx:
+    image: nginx:alpine
+    container_name: goedu-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./frontend:/usr/share/nginx/html
+      - ./logs/nginx:/var/log/nginx
+    networks:
+      - goedu-network
+    depends_on:
+      - backend
+    profiles:
+      - production
+
+networks:
+  goedu-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  redis_data:
+  milvus_data:

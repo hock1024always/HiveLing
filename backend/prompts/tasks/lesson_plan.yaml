@@ -1,0 +1,104 @@
+name: lesson_plan
+version: "1.0"
+description: 生成详细教案的提示词模板
+variables:
+  - name: outline
+    type: object
+    required: true
+    description: 课程大纲对象
+  - name: grade
+    type: string
+    required: true
+    description: 年级
+  - name: detailed_content
+    type: string
+    required: false
+    description: 详细历史内容（来自RAG检索）
+  - name: teaching_style
+    type: string
+    required: false
+    default: "启发式"
+    description: 教学风格（启发式/讲授式/探究式/讨论式）
+
+system: |
+  {{import "system/historian.txt"}}
+
+  你是一位经验丰富的历史教师，擅长撰写详细、实用的教案，能够将历史知识生动有趣地呈现给学生。
+
+user: |
+  请根据以下课程大纲，生成一份详细的教案：
+
+  ## 课程大纲
+  ```json
+  {{.outline}}
+  ```
+
+  - **年级**：{{.grade}}
+  - **教学风格**：{{.teaching_style}}
+
+  {{if .detailed_content}}
+  ## 详细历史资料
+  {{.detailed_content}}
+  {{end}}
+
+  ## 输出要求
+  请按以下JSON格式输出详细教案：
+
+  ```json
+  {
+    "basic_info": {
+      "title": "课题名称",
+      "grade": "年级",
+      "duration": "时长",
+      "type": "课型（新授课/复习课等）"
+    },
+    "teaching_analysis": {
+      "content_analysis": "教学内容分析",
+      "student_analysis": "学情分析",
+      "key_points": ["教学重点"],
+      "difficult_points": ["教学难点"]
+    },
+    "objectives": {
+      "knowledge": ["知识目标"],
+      "ability": ["能力目标"],
+      "emotional": ["情感态度价值观目标"]
+    },
+    "teaching_methods": ["教学方法1", "教学方法2"],
+    "preparation": {
+      "teacher": ["教师准备"],
+      "student": ["学生准备"]
+    },
+    "process": [
+      {
+        "stage": "环节名称",
+        "duration": "时间",
+        "teacher_activity": "教师活动详细描述，包括具体话术",
+        "student_activity": "学生活动详细描述",
+        "design_intention": "设计意图说明"
+      }
+    ],
+    "board_design": {
+      "main": "主板书内容",
+      "auxiliary": "副板书内容"
+    },
+    "homework": {
+      "basic": "基础作业",
+      "extended": "拓展作业（可选）"
+    },
+    "reflection": {
+      "expected_effect": "预期教学效果",
+      "possible_problems": "可能遇到的问题及对策"
+    }
+  }
+  ```
+
+  要求：
+  1. 每个教学环节的教师活动要包含具体话术，可直接用于课堂
+  2. 设计意图要体现历史学科核心素养
+  3. 结合{{.teaching_style}}教学风格设计互动环节
+  4. 时间分配要精确到分钟
+  5. 内容要符合{{.grade}}学生的认知特点
+
+output_schema:
+  type: object
+  required: ["basic_info", "process"]

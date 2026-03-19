@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识库管理 - 慧备灵师</title>
+<style>
+:root { --primary: #8B0000; --primary-light: #a52a2a; --gold: #FFD700; --bg: #f5f5f0; --border: #e2e8f0; --success: #16a34a; --warning: #d97706; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; min-height: 100vh; background: var(--bg); }
+
+/* 顶栏 */
+.topbar { background: #1a1a2e; color: #fff; padding: 0.8rem 2rem; display: flex; align-items: center; gap: 1rem; }
+.topbar a { color: #a0aec0; text-decoration: none; font-size: 0.9rem; }
+.topbar a:hover { color: var(--gold); }
+.topbar h1 { font-size: 1.2rem; }
+
+/* 主容器 */
+.container { max-width: 1200px; margin: 1.5rem auto; padding: 0 1.5rem; }
+
+/* 统计卡片 */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.stat-card { background: #fff; border-radius: 12px; padding: 1.2rem; border: 1px solid var(--border); }
+.stat-card h4 { font-size: 0.85rem; color: #666; margin-bottom: 0.5rem; }
+.stat-card .value { font-size: 1.8rem; font-weight: 600; color: var(--primary); }
+.stat-card .sub { font-size: 0.8rem; color: #999; margin-top: 0.3rem; }
+
+/* 面板 */
+.panel { background: #fff; border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 1.5rem; }
+.panel-title { font-size: 1.1rem; font-weight: 600; color: #333; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; justify-content: space-between; }
+
+/* 搜索 */
+.search-row { display: flex; gap: 0.8rem; margin-bottom: 1rem; }
+.search-row input { flex: 1; padding: 0.6rem 1rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; }
+.search-row input:focus { outline: none; border-color: var(--primary); }
+.search-row select { padding: 0.6rem 1rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; background: #fff; }
+.primary-btn { padding: 0.6rem 1.5rem; background: var(--primary); color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 0.95rem; transition: background 0.2s; }
+.primary-btn:hover { background: var(--primary-light); }
+.primary-btn:disabled { background: #ccc; cursor: not-allowed; }
+.secondary-btn { padding: 0.6rem 1.5rem; background: #fff; color: var(--primary); border: 1px solid var(--primary); border-radius: 8px; cursor: pointer; font-size: 0.95rem; transition: all 0.2s; }
+.secondary-btn:hover { background: #fef2f2; }
+
+/* 知识列表 */
+.knowledge-list { display: flex; flex-direction: column; gap: 0.8rem; }
+.knowledge-item { display: flex; align-items: flex-start; gap: 1rem; padding: 1rem; background: #fafaf5; border: 1px solid var(--border); border-radius: 8px; transition: all 0.2s; }
+.knowledge-item:hover { border-color: var(--primary); background: #fef2f2; }
+.knowledge-item .icon { width: 40px; height: 40px; background: var(--primary); color: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+.knowledge-item .content { flex: 1; min-width: 0; }
+.knowledge-item .title { font-weight: 600; color: #333; margin-bottom: 0.3rem; }
+.knowledge-item .meta { font-size: 0.8rem; color: #999; display: flex; gap: 1rem; flex-wrap: wrap; }
+.knowledge-item .meta span { display: flex; align-items: center; gap: 0.3rem; }
+.knowledge-item .actions { display: flex; gap: 0.5rem; }
+.knowledge-item .actions button { padding: 0.4rem 0.8rem; border: 1px solid var(--border); background: #fff; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
+.knowledge-item .actions button:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* 分类标签 */
+.category-tag { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500; }
+.category-tag.person { background: #dbeafe; color: #1e40af; }
+.category-tag.event { background: #dcfce7; color: #166534; }
+.category-tag.battle { background: #fef3c7; color: #92400e; }
+.category-tag.school { background: #f3e8ff; color: #7c3aed; }
+.category-tag.state { background: #fce7f3; color: #be185d; }
+.category-tag.culture { background: #e0f2fe; color: #0369a1; }
+
+/* 分页 */
+.pagination { display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 1.5rem; }
+.pagination button { padding: 0.4rem 0.8rem; border: 1px solid var(--border); background: #fff; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
+.pagination button:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+.pagination button:disabled { background: #f0f0f0; color: #999; cursor: not-allowed; }
+.pagination .page-info { font-size: 0.85rem; color: #666; }
+
+/* 导入区域 */
+.import-area { border: 2px dashed var(--border); border-radius: 12px; padding: 2rem; text-align: center; background: #fafaf5; }
+.import-area:hover { border-color: var(--primary); background: #fef2f2; }
+.import-area .icon { font-size: 3rem; margin-bottom: 1rem; }
+.import-area p { color: #666; margin-bottom: 1rem; }
+.import-area .file-types { font-size: 0.8rem; color: #999; }
+
+/* 模态框 */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.modal-overlay.active { display: flex; }
+.modal { background: #fff; border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; overflow: hidden; }
+.modal-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.modal-header h3 { font-size: 1.1rem; }
+.modal-header .close { font-size: 1.5rem; cursor: pointer; color: #999; }
+.modal-header .close:hover { color: #333; }
+.modal-body { padding: 1.5rem; overflow-y: auto; max-height: 60vh; }
+.modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.8rem; }
+
+/* 表单 */
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-size: 0.85rem; color: #666; margin-bottom: 0.3rem; }
+.form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; font-family: inherit; }
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: var(--primary); }
+.form-group textarea { resize: vertical; min-height: 100px; }
+
+/* 图谱可视化 */
+.graph-viz { height: 400px; background: #fafaf5; border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #999; }
+
+.hidden { display: none !important; }
+.loading-dots::after { content: ''; animation: dots 1.5s infinite; }
+@keyframes dots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+    <a href="index.html">&larr; 返回首页</a>
+    <h1>知识库管理</h1>
+</div>
+
+<div class="container">
+
+<!-- 统计卡片 -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <h4>知识条目总数</h4>
+        <div class="value" id="totalCount">-</div>
+        <div class="sub">本地知识库</div>
+    </div>
+    <div class="stat-card">
+        <h4>知识图谱节点</h4>
+        <div class="value" id="graphNodes">-</div>
+        <div class="sub">实体与关系</div>
+    </div>
+    <div class="stat-card">
+        <h4>向量索引</h4>
+        <div class="value" id="vectorCount">-</div>
+        <div class="sub">Milvus 向量库</div>
+    </div>
+    <div class="stat-card">
+        <h4>缓存命中率</h4>
+        <div class="value" id="cacheRate">-</div>
+        <div class="sub">搜索缓存</div>
+    </div>
+</div>
+
+<!-- 搜索与操作 -->
+<div class="panel">
+    <div class="panel-title">
+        <span>📚 知识条目</span>
+        <div style="display:flex;gap:0.5rem;">
+            <button class="secondary-btn" onclick="showImportModal()">批量导入</button>
+            <button class="primary-btn" onclick="showAddModal()">+ 新增知识</button>
+        </div>
+    </div>
+    <div class="search-row">
+        <input type="text" id="searchInput" placeholder="搜索知识条目..." onkeydown="if(event.key==='Enter')searchKnowledge()" />
+        <select id="categoryFilter">
+            <option value="">全部分类</option>
+            <option value="person">人物</option>
+            <option value="event">事件</option>
+            <option value="battle">战役</option>
+            <option value="school">学派</option>
+            <option value="state">诸侯国</option>
+            <option value="culture">制度文化</option>
+        </select>
+        <button class="primary-btn" onclick="searchKnowledge()">搜索</button>
+    </div>
+    <div class="knowledge-list" id="knowledgeList">
+        <div style="text-align:center;color:#999;padding:2rem;">加载中...</div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+</div>
+
+<!-- 知识图谱 -->
+<div class="panel">
+    <div class="panel-title">🕸️ 知识图谱可视化</div>
+    <div class="graph-viz" id="graphViz">
+        <div>知识图谱可视化区域（需接入可视化库如 D3.js 或 ECharts）</div>
+    </div>
+</div>
+
+</div><!-- /container -->
+
+<!-- 新增/编辑模态框 -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="modalTitle">新增知识</h3>
+            <span class="close" onclick="closeModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>标题 *</label>
+                <input type="text" id="editTitle" placeholder="知识条目标题" />
+            </div>
+            <div class="form-group">
+                <label>分类 *</label>
+                <select id="editCategory">
+                    <option value="person">人物</option>
+                    <option value="event">事件</option>
+                    <option value="battle">战役</option>
+                    <option value="school">学派</option>
+                    <option value="state">诸侯国</option>
+                    <option value="culture">制度文化</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>内容 *</label>
+                <textarea id="editContent" placeholder="知识详细内容..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>关键词（用逗号分隔）</label>
+                <input type="text" id="editKeywords" placeholder="关键词1, 关键词2, 关键词3" />
+            </div>
+            <div class="form-group">
+                <label>历史时期</label>
+                <select id="editPeriod">
+                    <option value="">未指定</option>
+                    <option value="春秋">春秋</option>
+                    <option value="战国">战国</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="flex:1;">
+                    <label>起始年份（负数表示公元前）</label>
+                    <input type="number" id="editYearStart" placeholder="如：-770" />
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>结束年份</label>
+                    <input type="number" id="editYearEnd" placeholder="如：-221" />
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="secondary-btn" onclick="closeModal()">取消</button>
+            <button class="primary-btn" onclick="saveKnowledge()">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- 导入模态框 -->
+<div class="modal-overlay" id="importModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>批量导入知识</h3>
+            <span class="close" onclick="closeImportModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="import-area" id="importArea">
+                <div class="icon">📁</div>
+                <p>拖拽文件到此处，或点击选择文件</p>
+                <input type="file" id="importFile" accept=".json,.csv,.md" style="display:none;" onchange="handleFileSelect(event)" />
+                <button class="secondary-btn" onclick="document.getElementById('importFile').click()">选择文件</button>
+                <div class="file-types">支持格式：JSON、CSV、Markdown</div>
+            </div>
+            <div id="importPreview" class="hidden" style="margin-top:1rem;">
+                <h4 style="margin-bottom:0.5rem;">预览</h4>
+                <pre style="background:#f5f5f5;padding:1rem;border-radius:4px;max-height:200px;overflow:auto;font-size:0.85rem;" id="importPreviewContent"></pre>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="secondary-btn" onclick="closeImportModal()">取消</button>
+            <button class="primary-btn" id="btnImport" onclick="confirmImport()" disabled>确认导入</button>
+        </div>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+let currentPage = 1;
+let pageSize = 10;
+let editingId = null;
+let importData = null;
+
+// 初始化
+loadStats();
+loadKnowledge();
+
+// 加载统计数据
+async function loadStats() {
+    try {
+        // 知识条目数
+        const knowledgeRes = await fetch(`${API_BASE}/api/knowledge/stats`);
+        const knowledgeData = await knowledgeRes.json();
+        document.getElementById('totalCount').textContent = knowledgeData.total || '-';
+
+        // 图谱节点数
+        const graphRes = await fetch(`${API_BASE}/api/graph/stats`);
+        const graphData = await graphRes.json();
+        document.getElementById('graphNodes').textContent = graphData.node_count || '-';
+
+        // 向量数
+        const vectorRes = await fetch(`${API_BASE}/api/rag/vector-stats`);
+        const vectorData = await vectorRes.json();
+        document.getElementById('vectorCount').textContent = vectorData.count || '-';
+
+        // 缓存命中率
+        const cacheRes = await fetch(`${API_BASE}/api/rag/cache-stats`);
+        const cacheData = await cacheRes.json();
+        const rate = cacheData.hit_rate ? (cacheData.hit_rate * 100).toFixed(1) + '%' : '-';
+        document.getElementById('cacheRate').textContent = rate;
+    } catch(e) {
+        console.error('加载统计失败:', e);
+    }
+}
+
+// 加载知识列表
+async function loadKnowledge(page = 1) {
+    currentPage = page;
+    const category = document.getElementById('categoryFilter').value;
+    const keyword = document.getElementById('searchInput').value;
+
+    try {
+        const res = await fetch(`${API_BASE}/api/knowledge/list?page=${page}&size=${pageSize}&category=${category}&keyword=${encodeURIComponent(keyword)}`);
+        const data = await res.json();
+
+        renderKnowledgeList(data.items || []);
+        renderPagination(data.total || 0);
+    } catch(e) {
+        document.getElementById('knowledgeList').innerHTML = `<div style="text-align:center;color:#999;padding:2rem;">加载失败: ${e.message}</div>`;
+    }
+}
+
+// 渲染知识列表
+function renderKnowledgeList(items) {
+    const container = document.getElementById('knowledgeList');
+    if (items.length === 0) {
+        container.innerHTML = `<div style="text-align:center;color:#999;padding:2rem;">暂无数据</div>`;
+        return;
+    }
+
+    const categoryNames = {
+        person: '人物', event: '事件', battle: '战役',
+        school: '学派', state: '诸侯国', culture: '制度文化'
+    };
+
+    container.innerHTML = items.map(item => `
+        <div class="knowledge-item">
+            <div class="icon">${getCategoryIcon(item.category)}</div>
+            <div class="content">
+                <div class="title">${esc(item.title)} <span class="category-tag ${item.category}">${categoryNames[item.category] || item.category}</span></div>
+                <div class="meta">
+                    <span>📅 ${item.period || '时期不详'}</span>
+                    <span>🏷️ ${item.keywords || '无关键词'}</span>
+                    <span>🕐 ${new Date(item.created_at).toLocaleDateString()}</span>
+                </div>
+            </div>
+            <div class="actions">
+                <button onclick="editKnowledge('${item.id}')">编辑</button>
+                <button onclick="deleteKnowledge('${item.id}')">删除</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// 渲染分页
+function renderPagination(total) {
+    const totalPages = Math.ceil(total / pageSize);
+    const container = document.getElementById('pagination');
+
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+
+    let html = `
+        <button onclick="loadKnowledge(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>上一页</button>
+        <span class="page-info">${currentPage} / ${totalPages}</span>
+        <button onclick="loadKnowledge(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''}>下一页</button>
+    `;
+    container.innerHTML = html;
+}
+
+// 搜索
+function searchKnowledge() {
+    loadKnowledge(1);
+}
+
+// 获取分类图标
+function getCategoryIcon(category) {
+    const icons = {
+        person: '👤', event: '📜', battle: '⚔️',
+        school: '📚', state: '🏛️', culture: '🏺'
+    };
+    return icons[category] || '📄';
+}
+
+// 显示新增模态框
+function showAddModal() {
+    editingId = null;
+    document.getElementById('modalTitle').textContent = '新增知识';
+    document.getElementById('editTitle').value = '';
+    document.getElementById('editContent').value = '';
+    document.getElementById('editKeywords').value = '';
+    document.getElementById('editCategory').value = 'person';
+    document.getElementById('editPeriod').value = '';
+    document.getElementById('editYearStart').value = '';
+    document.getElementById('editYearEnd').value = '';
+    document.getElementById('editModal').classList.add('active');
+}
+
+// 编辑知识
+async function editKnowledge(id) {
+    editingId = id;
+    try {
+        const res = await fetch(`${API_BASE}/api/knowledge/${id}`);
+        const item = await res.json();
+
+        document.getElementById('modalTitle').textContent = '编辑知识';
+        document.getElementById('editTitle').value = item.title || '';
+        document.getElementById('editContent').value = item.content || '';
+        document.getElementById('editKeywords').value = item.keywords || '';
+        document.getElementById('editCategory').value = item.category || 'person';
+        document.getElementById('editPeriod').value = item.period || '';
+        document.getElementById('editYearStart').value = item.year_start || '';
+        document.getElementById('editYearEnd').value = item.year_end || '';
+        document.getElementById('editModal').classList.add('active');
+    } catch(e) {
+        alert('加载失败: ' + e.message);
+    }
+}
+
+// 保存知识
+async function saveKnowledge() {
+    const data = {
+        title: document.getElementById('editTitle').value,
+        content: document.getElementById('editContent').value,
+        keywords: document.getElementById('editKeywords').value,
+        category: document.getElementById('editCategory').value,
+        period: document.getElementById('editPeriod').value,
+        year_start: parseInt(document.getElementById('editYearStart').value) || 0,
+        year_end: parseInt(document.getElementById('editYearEnd').value) || 0
+    };
+
+    if (!data.title || !data.content) {
+        alert('请填写标题和内容');
+        return;
+    }
+
+    try {
+        const url = editingId ? `${API_BASE}/api/knowledge/${editingId}` : `${API_BASE}/api/knowledge`;
+        const method = editingId ? 'PUT' : 'POST';
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (res.ok) {
+            closeModal();
+            loadKnowledge(currentPage);
+            loadStats();
+        } else {
+            const err = await res.json();
+            alert('保存失败: ' + (err.error || '未知错误'));
+        }
+    } catch(e) {
+        alert('保存失败: ' + e.message);
+    }
+}
+
+// 删除知识
+async function deleteKnowledge(id) {
+    if (!confirm('确定要删除这条知识吗？')) return;
+
+    try {
+        const res = await fetch(`${API_BASE}/api/knowledge/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            loadKnowledge(currentPage);
+            loadStats();
+        } else {
+            alert('删除失败');
+        }
+    } catch(e) {
+        alert('删除失败: ' + e.message);
+    }
+}
+
+// 关闭模态框
+function closeModal() {
+    document.getElementById('editModal').classList.remove('active');
+}
+
+// 显示导入模态框
+function showImportModal() {
+    importData = null;
+    document.getElementById('importFile').value = '';
+    document.getElementById('importPreview').classList.add('hidden');
+    document.getElementById('btnImport').disabled = true;
+    document.getElementById('importModal').classList.add('active');
+}
+
+// 关闭导入模态框
+function closeImportModal() {
+    document.getElementById('importModal').classList.remove('active');
+}
+
+// 处理文件选择
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const content = e.target.result;
+            if (file.name.endsWith('.json')) {
+                importData = JSON.parse(content);
+            } else {
+                // CSV 或 Markdown 简单处理
+                importData = { raw: content, type: file.name.split('.').pop() };
+            }
+
+            document.getElementById('importPreviewContent').textContent = JSON.stringify(importData, null, 2).slice(0, 1000) + '...';
+            document.getElementById('importPreview').classList.remove('hidden');
+            document.getElementById('btnImport').disabled = false;
+        } catch(err) {
+            alert('文件解析失败: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+// 确认导入
+async function confirmImport() {
+    if (!importData) return;
+
+    document.getElementById('btnImport').disabled = true;
+    document.getElementById('btnImport').textContent = '导入中...';
+
+    try {
+        const res = await fetch(`${API_BASE}/api/knowledge/import`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(importData)
+        });
+
+        if (res.ok) {
+            closeImportModal();
+            loadKnowledge(1);
+            loadStats();
+            alert('导入成功');
+        } else {
+            const err = await res.json();
+            alert('导入失败: ' + (err.error || '未知错误'));
+        }
+    } catch(e) {
+        alert('导入失败: ' + e.message);
+    } finally {
+        document.getElementById('btnImport').disabled = false;
+        document.getElementById('btnImport').textContent = '确认导入';
+    }
+}
+
+// 工具函数
+function esc(s) {
+    if (!s) return '';
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+</script>
+
+</body>
+</html>

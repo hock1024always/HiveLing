@@ -27,7 +27,9 @@ func main() {
 
 	// 启动路由
 	r := router.Router()
-	port := config.AppConfig.Server.Port
-	log.Printf("Server starting on port %d...", port)
-	r.Run(":9090")
+	addr := config.AppConfig.Server.GetAddr()
+	log.Printf("Server starting on %s ...", addr)
+	if err := r.Run(addr); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }

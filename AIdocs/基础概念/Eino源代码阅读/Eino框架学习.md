@@ -487,12 +487,14 @@ fmt.Println(trace.String())
 | 维度 | 我们项目 | Eino |
 |------|---------|------|
 | **ChatModel** | `services/llm/client.go` | 标准化接口 |
-| **Tool** | `services/mcp/tools.go` | 标准化接口 + 自动编排 |
+| **Tool** | `services/tools/*.go` (v1.2 标准化) | 标准化接口 + 自动编排 |
 | **Retriever** | `services/rag/retriever.go` | 标准化接口 |
 | **编排** | 手动调用 | Chain/Graph 声明式 |
 | **流式** | 手动 SSE | 自动处理 |
 | **Agent** | 分散在 controller | ADK 统一封装 |
 | **Callback** | 无 | 完整生命周期钩子 |
+| **前端** | 静态 HTML | 无前端框架 |
+| **部署** | 手动部署 | 无标准化部署 |
 
 ### 可优化方向
 
@@ -500,6 +502,19 @@ fmt.Println(trace.String())
 2. **工作流编排**：用 Graph 重构备课工作流状态机
 3. **流式处理**：简化 SSE 处理逻辑
 4. **可观测性**：添加 Callback 实现追踪和监控
+5. **前端框架**：引入 React/Vue 提升用户体验
+6. **标准化部署**：完善 Docker/K8s 部署方案
+
+### v1.2 优化成果
+
+在 v1.2 中，我们借鉴了 Eino 的设计理念：
+
+- **标准化 Tool 接口**：实现了与 Eino `tool.Tool` 兼容的接口
+- **组件化解耦**：将工具逻辑从业务代码中剥离
+- **统一配置管理**：前端通过 `config.js` 集中管理
+- **一键部署**：提供完整的部署脚本和文档
+
+未来可继续深入融合 Eino 的编排能力和可观测性体系。
 
 ## 最佳实践
 

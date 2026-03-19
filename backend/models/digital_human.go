@@ -43,7 +43,7 @@ type DigitalHumanVideo struct {
 	RetryCount  int            `gorm:"default:0" json:"retry_count"`
 	MaxRetry    int            `gorm:"default:3" json:"max_retry"`
 	CallbackURL string         `gorm:"type:varchar(512)" json:"callback_url,omitempty"`
-	Metadata    string         `gorm:"type:json" json:"metadata,omitempty"`  // 额外元数据（JSON）
+	Metadata    string         `gorm:"type:longtext" json:"metadata,omitempty"`  // 额外元数据（JSON）
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`

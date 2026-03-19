@@ -12,7 +12,7 @@ type KGNode struct {
 	Name        string         `gorm:"type:varchar(100);uniqueIndex:idx_name_type;not null" json:"name"`
 	Type        string         `gorm:"type:varchar(50);uniqueIndex:idx_name_type;not null" json:"type"` // person, state, event, battle, school, concept
 	Description string         `gorm:"type:text" json:"description"`
-	Properties  string         `gorm:"type:json" json:"properties"` // 额外属性 JSON
+	Properties  string         `gorm:"type:longtext" json:"properties"` // 额外属性 JSON
 	YearStart   int            `gorm:"default:0" json:"year_start"`
 	YearEnd     int            `gorm:"default:0" json:"year_end"`
 	CreatedAt   time.Time      `json:"created_at"`
@@ -27,7 +27,7 @@ type KGEdge struct {
 	ToNodeID     uint           `gorm:"index:idx_to;not null" json:"to_node_id"`
 	RelationType string         `gorm:"type:varchar(50);not null" json:"relation_type"`
 	Description  string         `gorm:"type:text" json:"description"`
-	Properties   string         `gorm:"type:json" json:"properties"`
+	Properties   string         `gorm:"type:longtext" json:"properties"`
 	CreatedAt    time.Time      `json:"created_at"`
 	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
 }

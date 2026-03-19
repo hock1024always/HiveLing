@@ -41,6 +41,7 @@ type RedisConfig struct {
 }
 
 type ServerConfig struct {
+	Host    string
 	Port    int
 	GinMode string
 }
@@ -88,6 +89,7 @@ func InitConfig() {
 			Password: getEnv("REDIS_PASSWORD", ""),
 		},
 		Server: ServerConfig{
+			Host:    getEnv("SERVER_HOST", "0.0.0.0"),
 			Port:    getEnvInt("SERVER_PORT", 9090),
 			GinMode: getEnv("GIN_MODE", "debug"),
 		},
@@ -134,7 +136,10 @@ func getEnvBool(key string, defaultValue bool) bool {
 	return defaultValue
 }
 
-// GetDSN 生成 MySQL 连接字符串
+// GetAddr 生成服务监听地址 host:port
+func (c *ServerConfig) GetAddr() string {
+	return c.Host + ":" + strconv.Itoa(c.Port)
+}
 func (c *MySQLConfig) GetDSN() string {
 	return c.User + ":" + c.Password + "@tcp(" + c.Host + ":" + strconv.Itoa(c.Port) + ")/" + c.Database + "?charset=utf8mb4&parseTime=True&loc=Local"
 }

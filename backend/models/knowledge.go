@@ -17,7 +17,7 @@ type KnowledgeChunk struct {
 	Period      string         `gorm:"type:varchar(100)" json:"period"`      // 时期：春秋/战国
 	YearStart   int            `gorm:"default:0" json:"year_start"`          // 年份范围（负数表示公元前）
 	YearEnd     int            `gorm:"default:0" json:"year_end"`
-	RelatedIDs  string         `gorm:"type:json" json:"related_ids"`         // 关联的其他知识块ID
+	RelatedIDs  string         `gorm:"type:longtext" json:"related_ids"`     // 关联的其他知识块ID
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
